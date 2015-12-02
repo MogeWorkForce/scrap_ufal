@@ -1,6 +1,7 @@
 # scrap_ufal
 ## Documentação em construção
 Para conseguir rodar o script, efetuar o seguinte comando, com python (2.7.X) instalado na sua máquina:
+
 0 - Instalar o pip na sua máquina:
   - Recomendo seguir o tutorial de instalação do próprio site do Pip: https://pip.pypa.io/en/stable/installing/#install-pip
   - Debian e Ubuntu: sudo apt-get install python-pip
