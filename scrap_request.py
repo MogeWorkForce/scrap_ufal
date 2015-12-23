@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-
+from unicodedata import normalize
 import requests
 import re
 import time
 import logging
-from unicodedata import normalize
+import helper
+import json
 
 formatter = logging.Formatter(
     "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -26,11 +27,23 @@ match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(r'<span\s?(?:class="paginaAoRedor")?[^>]?>'
                            r'(.*?)</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
+##match_content = re.compile(
+##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)"'
+##    r'|class="(?P<class>[^"]*?)")?\s?(?:colspan=".*"?)?>(?P<content>[^<]*?)'
+##    r'</(?:t(?:d|h)|a|span)>'
+##)
+
+##match_content = re.compile(
+##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
+##    r'\s?(?:class="(?P<class>[^"]*?)")?\s?(?:colspan=".*"?)?>(?P<content>[^<]*?)'
+##    r'</(?:t(?:d|h)|a|span)>'
+##)
+
 match_content = re.compile(
-    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)"'
-    r'|class="(?P<class>[^"]*)"?)?\s?(?:colspan=".*"?)?>(?P<content>[^<]*?)'
-    r'</(?:t(?:d|h)|a|span)>'
+    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
+    r'\s?(?:class="(?P<class>[^"]*?)")?.*?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
 )
+
 match_tr_content = re.compile(
     r'<(?:td|span|tr)\s?(?:colspan="[^"]*?"|class="(?P<class>[^"]*?)")?>'
     r'(?P<content_line>[^<]*?)<\/(?:td|span|tr)>'
@@ -82,6 +95,7 @@ def load_content(content):
         skip = False
         for j, content in enumerate(match_tr.finditer(table)):
             line = content.group('content_tr').strip()
+            
             if 'subtabela' in line:
                 data[head[0]][last_key_th] = content_subtable
                 counter_subtable += 1
@@ -101,9 +115,10 @@ def load_content(content):
             rotulo = []
             counter_sub_head = 1
             title = True
+            print line, head, sub_head
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
-                print z, content_value
+                #print z, content_value, line
                 insert_value = True
                 if class_tr in ('cabecalho', 'titulo'):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
@@ -159,7 +174,7 @@ def load_content(content):
                 logger.debug("tr "+last_key_tr)
                 logger.debug("th "+last_key_th)
             #print i, j, head, sub_head
-    logger.warning(data)
+    logger.warning(json.dumps(data))
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
@@ -175,7 +190,10 @@ for dt in base_data.finditer(url):
     data['geral_data']['session'] = dt.group("session")
     logger.debug(data)
 
-result = requests.get(url, timeout=10)
+try:
+    result = requests.get(url, timeout=10)
+except:
+    result = helper.Reader('page1.html')
 no_spaces = clean_result(result)
 load_content(no_spaces)
 
