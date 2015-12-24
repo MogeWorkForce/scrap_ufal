@@ -27,17 +27,6 @@ match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(r'<span\s?(?:class="paginaAoRedor")?[^>]?>'
                            r'(.*?)</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
-##match_content = re.compile(
-##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)"'
-##    r'|class="(?P<class>[^"]*?)")?\s?(?:colspan=".*"?)?>(?P<content>[^<]*?)'
-##    r'</(?:t(?:d|h)|a|span)>'
-##)
-
-##match_content = re.compile(
-##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
-##    r'\s?(?:class="(?P<class>[^"]*?)")?\s?(?:colspan=".*"?)?>(?P<content>[^<]*?)'
-##    r'</(?:t(?:d|h)|a|span)>'
-##)
 
 match_content = re.compile(
     r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
@@ -70,8 +59,9 @@ def load_content(content):
     table_content = match.findall(content)
     adjust_headers = []
     subtable = match_subtable.findall(content)
-    content_subtable = {}
+    content_subtable = []
     for i, subtable in enumerate(subtable):
+        content_ = {}
         subtable_headers = []
         for j, content in enumerate(match_tr.finditer(subtable)):
             line_ = content.group('content_tr').strip()
@@ -81,27 +71,37 @@ def load_content(content):
                 if class_tr_sub in ('cabecalho', ):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
                     subtable_headers.append(content_value)
-                    content_subtable[subtable_headers[-1]] = {}
+                    content_[subtable_headers[-1]] = {}
                     continue
                 else:
-                    if not content_subtable[subtable_headers[z]]:
-                        content_subtable[subtable_headers[z]] = [content_value]
+                    if not content_[subtable_headers[z]]:
+                        content_[subtable_headers[z]] = [content_value]
                     else:
-                        content_subtable[subtable_headers[z]].append(content_value)
-    qt_lines_sub = j
+                        content_[subtable_headers[z]].append(content_value)
+        content_subtable.append({"content": content_, "values": j})
+    
+    counter_subtable = 0
     for i, table in enumerate(table_content):
         head = []
-        counter_subtable = 0
         skip = False
+        qt_lines_sub = -1
+        if counter_subtable < len(content_subtable):
+            qt_lines_sub = content_subtable[counter_subtable]['values']
+        rotulo = []
+        count_rotulo = 0
+        duo_rotulo = False
+        referency = 0
+        class_tr_rotulo = ''
         for j, content in enumerate(match_tr.finditer(table)):
             line = content.group('content_tr').strip()
             
             if 'subtabela' in line:
-                data[head[0]][last_key_th] = content_subtable
+                #print 'subtabela'
+                data[head[0]][last_key_th] = content_subtable[counter_subtable]['content']
                 counter_subtable += 1
                 skip = True
                 continue
-
+            #print qt_lines_sub
             if skip and qt_lines_sub >= 0:
                 qt_lines_sub -= 1
                 continue
@@ -112,13 +112,12 @@ def load_content(content):
             last_key_tr = ''
             last_key_th = ''
             sub_head = []
-            rotulo = []
             counter_sub_head = 1
             title = True
-            print line, head, sub_head
+            #print head, sub_head, last_key_th, last_key_tr, rotulo
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
-                #print z, content_value, line
+                #print z, content_value, line, head, sub_head, rotulo
                 insert_value = True
                 if class_tr in ('cabecalho', 'titulo'):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
@@ -135,46 +134,69 @@ def load_content(content):
                         continue
 
                 class_content = content_row.group('class')
+                if duo_rotulo and class_tr_rotulo != class_tr:
+                        count_rotulo = 0
+                        duo_rotulo = False
+
                 if class_content and class_content in ('rotulo'):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
                     last_key_th = content_value
                     sub_head.append(last_key_th)
+                    rotulo.append(last_key_th)
+                    count_rotulo +=1
+                    #print 'j: %s, z: %s, c_rotulo: %s, class_tr: %s' % (j, z, count_rotulo, class_tr)
+                    #print rotulo
+                    if not duo_rotulo and count_rotulo == 2:
+                        referency = j -1
+                        duo_rotulo = True
+                        class_tr_rotulo = class_tr
+                    
                     if len(head) > 1:
-                        data[head[0]][head[-1]][sub_head[-1]] = {}
-                    else:
-                        data[head[0]][sub_head[-1]] = {}
-                else:
-                    #print z, class_tr, head, sub_head, class_content, title
-                    if len(head) > 1:
-                        if not sub_head:
-                            if not data[head[0]][head[z+1]]:
-                                data[head[0]][head[z+1]] = [content_value]
-                            else:
-                                data[head[0]][head[z+1]].append(content_value)
-                    else:
-                        if not sub_head and len(head)>1:
-                            if not data[head[0]][head[z+1]]:
-                                data[head[0]][head[z+1]] = [content_value]
-                            else:
-                                data[head[0]][head[z+1]].append(content_value)
+                        if duo_rotulo:
+                            data[head[0]][head[-1]][rotulo[referency]][sub_head[-1]] = {}
                         else:
-                            print head, sub_head, content_value
+                            data[head[0]][head[-1]][sub_head[-1]] = {}
+                    else:
+                        #print '-----', sub_head[-1],
+                        #print '-----', data[head[0]]
+                        if duo_rotulo:
+                            #print 'j: ', rotulo, referency
+                            data[head[0]][rotulo[referency]][sub_head[-1]] = {}
+                        else:
+                            data[head[0]][sub_head[-1]] = {}
+                else:                       
+                    count_rotulo -=1
+                    #print 'j: %s, z: %s, c_rotulo: %s, class_tr: %s' % (j, z, count_rotulo, class_tr)
+                    #print 'referency: %s, duo_rotulo: %s' % (referency, duo_rotulo)
+                    
+                    #print z, class_tr, head, sub_head, class_content, title
+                    if len(head) > 1 and not sub_head:
+                        if not data[head[0]][head[z+1]]:
+                            data[head[0]][head[z+1]] = [content_value]
+                        else:
+                            data[head[0]][head[z+1]].append(content_value)
+                    else:
+                        #print head, sub_head, content_value, data
+
+                        if not duo_rotulo:
                             if not data[head[0]][sub_head[-1]]:
                                 data[head[0]][sub_head[-1]] = [content_value]
                             else:
                                 data[head[0]][sub_head[-1]].append(content_value)
+                        else:
+                            if not data[head[0]][rotulo[referency]][sub_head[-1]]:
+                                data[head[0]][rotulo[referency]][sub_head[-1]] = [content_value]
+                            else:
+                                data[head[0]][rotulo[referency]][sub_head[-1]].append(content_value)
 
-##                if title:
-##                    print 'outros trs sao conteudos'
-
-                link_document = content_row.group('link_document')
-                values_debug = [content_value, class_content, link_document]
-                values_debug = [temp for temp in values_debug if temp]
-                logger.debug(values_debug)
-                logger.debug("tr "+last_key_tr)
-                logger.debug("th "+last_key_th)
-            #print i, j, head, sub_head
-    logger.warning(json.dumps(data))
+                #link_document = content_row.group('link_document')
+                #values_debug = [content_value, class_content, link_document]
+                #values_debug = [temp for temp in values_debug if temp]
+                #logger.debug(values_debug)
+                #logger.debug("tr "+last_key_tr)
+                #logger.debug("th "+last_key_th)
+            #print i, j, head, sub_head, rotulo
+    logger.warning(json.dumps(data, indent=2))
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
@@ -182,6 +204,7 @@ def clean_result(result):
 url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS006140'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=364150362012015NE001171'
+url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS003530'
 
 for dt in base_data.finditer(url):
     data['geral_data']['url_base'] = dt.group("host")
@@ -192,8 +215,18 @@ for dt in base_data.finditer(url):
 
 try:
     result = requests.get(url, timeout=10)
+    data['geral_data']['estatico'] = False
+    data['geral_data']['url'] = url
 except:
-    result = helper.Reader('page1.html')
+    print 'leu um arquivo estatico'
+    #page = 'page1.html'
+    page = 'liquidacao.html'
+    #time.sleep(3)
+    print page
+    result = helper.Reader(page)
+    #result = helper.Reader()
+    data['geral_data']['estatico'] = True
+    data['geral_data']['arquivo'] = page
 no_spaces = clean_result(result)
 load_content(no_spaces)
 
