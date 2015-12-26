@@ -21,7 +21,8 @@ logger.addHandler(file_handler)
 
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
-                       r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>.*)')
+                       r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>[a-zA-Z0-9]*)'
+                       r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(r'<span\s?(?:class="paginaAoRedor")?[^>]?>'
@@ -51,11 +52,22 @@ def _normalize_text(txt, codif='utf-8'):
     return normalize('NFKD', txt).encode('ASCII', 'ignore').replace(" ", "_").replace(':', '').lower()
 
 def get_content_page(url, original_link=None):
-    result = requests.get(url, timeout=10)
+    num_page = base_data.findall(url)[0][-1]
+    num_page = int(num_page) if num_page else 1
+    paginator = False
+    if num_page >1:
+        paginator = True
+        
+    try:
+        result = requests.get(url, timeout=10)
+    except:
+        page = 'page%s.html' % base_data.findall(url)[0][-1]
+        print page
+        result = helper.Reader(page)
     no_spaces = clean_result(result)
-    load_content(no_spaces)
+    load_content(no_spaces, paginator)
 
-def load_content(content):
+def load_content(content, paginator=False):
     table_content = match.findall(content)
     adjust_headers = []
     subtable = match_subtable.findall(content)
@@ -81,6 +93,10 @@ def load_content(content):
         content_subtable.append({"content": content_, "values": j})
     
     counter_subtable = 0
+    if paginator:
+        print 'paginator'
+        table_content = table_content[-1:]
+
     for i, table in enumerate(table_content):
         head = []
         skip = False
@@ -123,6 +139,8 @@ def load_content(content):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
                     last_key_tr = content_value
                     head.append(last_key_tr)
+                    if paginator:
+                        continue
                     if class_tr == 'titulo':
                         title = True
                         data[head[-1]] = {}
@@ -219,8 +237,8 @@ try:
     data['geral_data']['url'] = url
 except:
     print 'leu um arquivo estatico'
-    #page = 'page1.html'
-    page = 'liquidacao.html'
+    page = 'page1.html'
+    #page = 'liquidacao.html'
     #time.sleep(3)
     print page
     result = helper.Reader(page)
@@ -232,7 +250,6 @@ load_content(no_spaces)
 
 paginator = get_paginator.findall(no_spaces)
 print paginator
-paginator = []
 visited_link = []
 for pg in paginator:
     for link_url in links.finditer(pg):
