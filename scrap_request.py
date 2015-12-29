@@ -7,6 +7,7 @@ import time
 import logging
 import helper
 import json
+import sys
 
 formatter = logging.Formatter(
     "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -25,8 +26,8 @@ base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
                        r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
-get_paginator = re.compile(r'<span\s?(?:class="paginaAoRedor")?[^>]?>'
-                           r'(.*?)</span>')
+get_paginator = re.compile(r'<span class="paginaXdeN">.*(?P<inicio>\d{1,3}?)'
+                           r'.*(?P<fim>\d{1,3})</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
 match_content = re.compile(
@@ -44,14 +45,15 @@ match_tr = re.compile(
 )
 
 match_tr_subtable = re.compile(r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
-data = {'geral_data': {}}
 
 def _normalize_text(txt, codif='utf-8'):
     if isinstance(txt, str):
         txt = txt.decode(codif, "ignore")
     return normalize('NFKD', txt).encode('ASCII', 'ignore').replace(" ", "_").replace(':', '').lower()
 
-def get_content_page(url, original_link=None):
+def get_content_page(url, original_link=None, data=None):
+    if not data:
+        data = {}
     num_page = base_data.findall(url)[0][-1]
     num_page = int(num_page) if num_page else 1
     paginator = False
@@ -60,14 +62,18 @@ def get_content_page(url, original_link=None):
         
     try:
         result = requests.get(url, timeout=10)
+        print result.status
     except:
         page = 'page%s.html' % base_data.findall(url)[0][-1]
         print page
         result = helper.Reader(page)
+        time.sleep(3)
+        
     no_spaces = clean_result(result)
-    load_content(no_spaces, paginator)
+    data = load_content(no_spaces, paginator, data)
+    return data
 
-def load_content(content, paginator=False):
+def load_content(content, paginator=False, data=None):
     table_content = match.findall(content)
     adjust_headers = []
     subtable = match_subtable.findall(content)
@@ -214,7 +220,8 @@ def load_content(content, paginator=False):
                 #logger.debug("tr "+last_key_tr)
                 #logger.debug("th "+last_key_th)
             #print i, j, head, sub_head, rotulo
-    logger.warning(json.dumps(data, indent=2))
+    #logger.warning(json.dumps(data, indent=2))
+    return data
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
@@ -222,41 +229,46 @@ def clean_result(result):
 url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS006140'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=364150362012015NE001171'
-url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS003530'
-
+#url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS003530'
+#url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=513001579042015NS002737'
+data_doc = {'geral_data': {}}
 for dt in base_data.finditer(url):
-    data['geral_data']['url_base'] = dt.group("host")
-    data['geral_data']['type_doc'] = dt.group("type_doc")
-    data['geral_data']['num_doc'] = dt.group("num_doc")
-    data['geral_data']['session'] = dt.group("session")
-    logger.debug(data)
+    data_doc['geral_data']['url_base'] = dt.group("host")
+    data_doc['geral_data']['type_doc'] = dt.group("type_doc")
+    data_doc['geral_data']['num_doc'] = dt.group("num_doc")
+    data_doc['geral_data']['session'] = dt.group("session")
+    logger.debug(data_doc)
 
 try:
     result = requests.get(url, timeout=10)
-    data['geral_data']['estatico'] = False
-    data['geral_data']['url'] = url
+    data_doc['geral_data']['estatico'] = False
+    data_doc['geral_data']['url'] = url
 except:
     print 'leu um arquivo estatico'
     page = 'page1.html'
+    print 'error'
     #page = 'liquidacao.html'
     #time.sleep(3)
     print page
     result = helper.Reader(page)
     #result = helper.Reader()
-    data['geral_data']['estatico'] = True
-    data['geral_data']['arquivo'] = page
+    data_doc['geral_data']['estatico'] = True
+    data_doc['geral_data']['arquivo'] = page
 no_spaces = clean_result(result)
-load_content(no_spaces)
-
+load_content(no_spaces, data=data_doc)
+print data_doc['geral_data'].get('url', 'estatico :(')
 paginator = get_paginator.findall(no_spaces)
 print paginator
+#paginator = []
 visited_link = []
+end_link_paginator = '&pagina=%s#paginacao'
 for pg in paginator:
-    for link_url in links.finditer(pg):
-        link_ = link_url.group('links')
-        logger.debug(data['geral_data']['url_base']+link_)
+    end, init = pg
+    for next_pg in xrange(int(init)+1, int(end)+1):
+        link_ = url+end_link_paginator % next_pg
+        logger.debug(link_)
         if link_ not in visited_link:
-            get_content_page(data['geral_data']['url_base']+link_)
+            data_doc = get_content_page(link_, data=data_doc)
             visited_link.append(link_)
 
-
+print data_doc
