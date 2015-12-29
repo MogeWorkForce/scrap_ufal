@@ -55,9 +55,12 @@ def _normalize_text(txt, codif='utf-8'):
         txt = txt.decode(codif, "ignore")
     return normalize('NFKD', txt).encode('ASCII', 'ignore').replace(" ", "_").replace(':', '').lower()
 
-def get_content_page(url, original_link=None, data=None):
+def get_content_page(url, visited_links=None, data=None):
     if not data:
         data = {}
+
+    if not visited_links:
+        visited_links = []
 
     type_session = base_data.findall(url)[0][2]
     num_page = base_data.findall(url)[0][-1]
@@ -67,6 +70,8 @@ def get_content_page(url, original_link=None, data=None):
         paginator = True
         
     try:
+        print url
+        time.sleep(2)
         result = requests.get(url, timeout=10)
     except:
         page = 'page%s.html' % base_data.findall(url)[0][-1]
@@ -77,10 +82,13 @@ def get_content_page(url, original_link=None, data=None):
         result = helper.Reader(page)
         
     no_spaces = clean_result(result)
-    data = load_content(no_spaces, paginator, data, original_link)
+    data = load_content(no_spaces, paginator, data, visited_links)
     return data
 
-def load_content(content, paginator=False, data=None, original_link=None):
+def load_content(content, paginator=False, data=None, visited_links=None):
+    if not visited_links:
+        visited_links = []
+        
     table_content = match.findall(content)
     adjust_headers = []
     subtable = match_subtable.findall(content)
@@ -205,9 +213,10 @@ def load_content(content, paginator=False, data=None, original_link=None):
                 link_document = content_row.group('link_document')
                 if link_document:
                     new_url = data_doc['geral_data']['url_base']+'/'+data_doc['geral_data']['session']+'/'+link_document
-                    if new_url != original_link:
+                    if new_url not in visited_links:
+                        visited_links.append(new_url)
                         #TODO: Save content in another document
-                        print 'content_link', get_content_page(url=new_url, original_link=data_doc['geral_data']['url'])
+                        print len(visited_links), 'content_link', get_content_page(url=new_url, visited_links=visited_links)
                 #values_debug = [content_value, class_content, link_document]
                 #values_debug = [temp for temp in values_debug if temp]
                 #logger.debug(values_debug)
@@ -250,11 +259,11 @@ except:
     data_doc['geral_data']['arquivo'] = page
     data_doc['geral_data']['url'] = url
 
+visited_link = [url]
 no_spaces = clean_result(result)
-load_content(no_spaces, data=data_doc)
+load_content(no_spaces, data=data_doc, visited_links=visited_link)
 print 'eh estatico? ', data_doc['geral_data'].get('estatico')
 paginator = get_paginator.findall(no_spaces)
-visited_link = []
 end_link_paginator = '&pagina=%s#paginacao'
 for pg in paginator:
     end, init = pg
@@ -262,7 +271,8 @@ for pg in paginator:
         link_ = url+end_link_paginator % next_pg
         logger.debug(link_)
         if link_ not in visited_link:
-            data_doc = get_content_page(link_, data=data_doc)
+            data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
             visited_link.append(link_)
 
-print 'content_doc principal: ', data_doc
+print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
+print 'links visitados: ', len(visited_link)
