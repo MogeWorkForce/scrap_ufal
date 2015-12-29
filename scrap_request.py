@@ -30,11 +30,15 @@ get_paginator = re.compile(r'<span class="paginaXdeN">.*(?P<inicio>\d{1,3}?)'
                            r'.*(?P<fim>\d{1,3})</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
-match_content = re.compile(
-    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
-    r'\s?(?:class="(?P<class>[^"]*?)")?.*?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
-)
+##match_content = re.compile(
+##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
+##    r'\s?(?:class="(?P<class>[^"]*?)")?.*?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
+##)
 
+match_content = re.compile(
+    r'<(?:t(?:d|h)|a|span)[^>]*?\s?(?:class="(?P<class>[^"]*?)")?.*?'
+    r'(?:href="(?P<link_document>[^"]*?)")?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
+)
 match_tr_content = re.compile(
     r'<(?:td|span|tr)\s?(?:colspan="[^"]*?"|class="(?P<class>[^"]*?)")?>'
     r'(?P<content_line>[^<]*?)<\/(?:td|span|tr)>'
@@ -54,6 +58,8 @@ def _normalize_text(txt, codif='utf-8'):
 def get_content_page(url, original_link=None, data=None):
     if not data:
         data = {}
+
+    type_session = base_data.findall(url)[0][2]
     num_page = base_data.findall(url)[0][-1]
     num_page = int(num_page) if num_page else 1
     paginator = False
@@ -62,18 +68,19 @@ def get_content_page(url, original_link=None, data=None):
         
     try:
         result = requests.get(url, timeout=10)
-        print result.status
     except:
         page = 'page%s.html' % base_data.findall(url)[0][-1]
+
+        if type_session == 'liquidacao':
+            page = 'liquidacao.html'
         print page
         result = helper.Reader(page)
-        time.sleep(3)
         
     no_spaces = clean_result(result)
-    data = load_content(no_spaces, paginator, data)
+    data = load_content(no_spaces, paginator, data, original_link)
     return data
 
-def load_content(content, paginator=False, data=None):
+def load_content(content, paginator=False, data=None, original_link=None):
     table_content = match.findall(content)
     adjust_headers = []
     subtable = match_subtable.findall(content)
@@ -100,7 +107,6 @@ def load_content(content, paginator=False, data=None):
     
     counter_subtable = 0
     if paginator:
-        print 'paginator'
         table_content = table_content[-1:]
 
     for i, table in enumerate(table_content):
@@ -118,12 +124,10 @@ def load_content(content, paginator=False, data=None):
             line = content.group('content_tr').strip()
             
             if 'subtabela' in line:
-                #print 'subtabela'
                 data[head[0]][last_key_th] = content_subtable[counter_subtable]['content']
                 counter_subtable += 1
                 skip = True
                 continue
-            #print qt_lines_sub
             if skip and qt_lines_sub >= 0:
                 qt_lines_sub -= 1
                 continue
@@ -136,11 +140,8 @@ def load_content(content, paginator=False, data=None):
             sub_head = []
             counter_sub_head = 1
             title = True
-            #print head, sub_head, last_key_th, last_key_tr, rotulo
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
-                #print z, content_value, line, head, sub_head, rotulo
-                insert_value = True
                 if class_tr in ('cabecalho', 'titulo'):
                     content_value = _normalize_text(content_value).replace('_/_', '_')
                     last_key_tr = content_value
@@ -152,7 +153,6 @@ def load_content(content, paginator=False, data=None):
                         data[head[-1]] = {}
                         continue
                     else:
-                        #print head
                         data[head[0]][head[-1]] = {}
                         title = False
                         continue
@@ -168,8 +168,6 @@ def load_content(content, paginator=False, data=None):
                     sub_head.append(last_key_th)
                     rotulo.append(last_key_th)
                     count_rotulo +=1
-                    #print 'j: %s, z: %s, c_rotulo: %s, class_tr: %s' % (j, z, count_rotulo, class_tr)
-                    #print rotulo
                     if not duo_rotulo and count_rotulo == 2:
                         referency = j -1
                         duo_rotulo = True
@@ -181,27 +179,18 @@ def load_content(content, paginator=False, data=None):
                         else:
                             data[head[0]][head[-1]][sub_head[-1]] = {}
                     else:
-                        #print '-----', sub_head[-1],
-                        #print '-----', data[head[0]]
                         if duo_rotulo:
-                            #print 'j: ', rotulo, referency
                             data[head[0]][rotulo[referency]][sub_head[-1]] = {}
                         else:
                             data[head[0]][sub_head[-1]] = {}
                 else:                       
                     count_rotulo -=1
-                    #print 'j: %s, z: %s, c_rotulo: %s, class_tr: %s' % (j, z, count_rotulo, class_tr)
-                    #print 'referency: %s, duo_rotulo: %s' % (referency, duo_rotulo)
-                    
-                    #print z, class_tr, head, sub_head, class_content, title
                     if len(head) > 1 and not sub_head:
                         if not data[head[0]][head[z+1]]:
                             data[head[0]][head[z+1]] = [content_value]
                         else:
                             data[head[0]][head[z+1]].append(content_value)
                     else:
-                        #print head, sub_head, content_value, data
-
                         if not duo_rotulo:
                             if not data[head[0]][sub_head[-1]]:
                                 data[head[0]][sub_head[-1]] = [content_value]
@@ -213,7 +202,12 @@ def load_content(content, paginator=False, data=None):
                             else:
                                 data[head[0]][rotulo[referency]][sub_head[-1]].append(content_value)
 
-                #link_document = content_row.group('link_document')
+                link_document = content_row.group('link_document')
+                if link_document:
+                    new_url = data_doc['geral_data']['url_base']+'/'+data_doc['geral_data']['session']+'/'+link_document
+                    if new_url != original_link:
+                        #TODO: Save content in another document
+                        print 'content_link', get_content_page(url=new_url, original_link=data_doc['geral_data']['url'])
                 #values_debug = [content_value, class_content, link_document]
                 #values_debug = [temp for temp in values_debug if temp]
                 #logger.debug(values_debug)
@@ -245,21 +239,21 @@ try:
     data_doc['geral_data']['url'] = url
 except:
     print 'leu um arquivo estatico'
-    page = 'page1.html'
+    page = 'clonepage1.html'
+    #page = 'page1.html'
     print 'error'
     #page = 'liquidacao.html'
     #time.sleep(3)
     print page
     result = helper.Reader(page)
-    #result = helper.Reader()
     data_doc['geral_data']['estatico'] = True
     data_doc['geral_data']['arquivo'] = page
+    data_doc['geral_data']['url'] = url
+
 no_spaces = clean_result(result)
 load_content(no_spaces, data=data_doc)
-print data_doc['geral_data'].get('url', 'estatico :(')
+print 'eh estatico? ', data_doc['geral_data'].get('estatico')
 paginator = get_paginator.findall(no_spaces)
-print paginator
-#paginator = []
 visited_link = []
 end_link_paginator = '&pagina=%s#paginacao'
 for pg in paginator:
@@ -271,4 +265,4 @@ for pg in paginator:
             data_doc = get_content_page(link_, data=data_doc)
             visited_link.append(link_)
 
-print data_doc
+print 'content_doc principal: ', data_doc
