@@ -55,13 +55,29 @@ def _normalize_text(txt, codif='utf-8'):
         txt = txt.decode(codif, "ignore")
     return normalize('NFKD', txt).encode('ASCII', 'ignore').replace(" ", "_").replace(':', '').lower()
 
+def get_general_data(url, data=None):
+    if not data:
+        data = {'geral_data': {}}
+    if 'geral_data' not in data:
+        data['geral_data'] = {}
+        
+    for dt in base_data.finditer(url):
+        data['geral_data']['url_base'] = dt.group("host")
+        data['geral_data']['type_doc'] = dt.group("type_doc")
+        data['geral_data']['num_doc'] = dt.group("num_doc")
+        data['geral_data']['session'] = dt.group("session")
+    logger.debug(data_doc)
+
+    return data
+
+    
 def get_content_page(url, visited_links=None, data=None):
     if not data:
         data = {}
 
     if not visited_links:
         visited_links = []
-
+    data = get_general_data(url, data)
     type_session = base_data.findall(url)[0][2]
     num_page = base_data.findall(url)[0][-1]
     num_page = int(num_page) if num_page else 1
@@ -230,17 +246,10 @@ def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS006140'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=364150362012015NE001171'
-#url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS003530'
-#url = 'http://portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=513001579042015NS002737'
+
 data_doc = {'geral_data': {}}
-for dt in base_data.finditer(url):
-    data_doc['geral_data']['url_base'] = dt.group("host")
-    data_doc['geral_data']['type_doc'] = dt.group("type_doc")
-    data_doc['geral_data']['num_doc'] = dt.group("num_doc")
-    data_doc['geral_data']['session'] = dt.group("session")
-    logger.debug(data_doc)
+data_doc = get_general_data(url, data_doc)
+print data_doc
 
 try:
     result = requests.get(url, timeout=10)
@@ -248,8 +257,8 @@ try:
     data_doc['geral_data']['url'] = url
 except:
     print 'leu um arquivo estatico'
-    page = 'clonepage1.html'
-    #page = 'page1.html'
+    #page = 'clonepage1.html'
+    page = 'page1.html'
     print 'error'
     #page = 'liquidacao.html'
     #time.sleep(3)
