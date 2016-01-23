@@ -68,7 +68,8 @@ def save_or_update(doc):
 
 def try_numeric(value):
     try:
-        value = float(value)
+        tmp_value = value.replace("R$", "")
+        value = float(tmp_value)
     except:
         pass
     return value
@@ -114,7 +115,7 @@ def get_content_page(url, visited_links=None, data=None):
         
     try:
         logger.debug((len(visited_links), url))
-        time.sleep(1)
+        time.sleep(0.5)
         result = requests.get(url, timeout=10)
     except:
         #page = 'page%s.html' % base_data.findall(url)[0][-1]
