@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
+from data_model import TO
 import requests
 import re
 import time
@@ -30,11 +31,6 @@ get_paginator = re.compile(r'<span class="paginaXdeN">.*(?P<inicio>\d{1,3}?)'
                            r'.*(?P<fim>\d{1,3})</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
-##match_content = re.compile(
-##    r'<(?:t(?:d|h)|a|span)[^>]*?(?:href="(?P<link_document>[^"]*?)")?'
-##    r'\s?(?:class="(?P<class>[^"]*?)")?.*?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
-##)
-
 match_content = re.compile(
     r'<(?:t(?:d|h)|a|span)[^>]*?\s?(?:class="(?P<class>[^"]*?)")?.*?'
     r'(?:href="(?P<link_document>[^"]*?)")?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
@@ -53,7 +49,12 @@ match_tr_subtable = re.compile(r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)")
 def _normalize_text(txt, codif='utf-8'):
     if isinstance(txt, str):
         txt = txt.decode(codif, "ignore")
-    return normalize('NFKD', txt).encode('ASCII', 'ignore').replace(" ", "_").replace(':', '').lower()
+    return normalize('NFKD', txt).encode('ASCII', 'ignore').\
+        replace(" ", "_").\
+        replace(':', '').\
+        replace("(","").\
+        replace(")","").\
+        replace("$", "s").lower()
 
 def get_general_data(url, data=None):
     if not data:
@@ -233,6 +234,8 @@ def load_content(content, paginator=False, data=None, visited_links=None):
                         visited_links.append(new_url)
                         #TODO: Save content in another document
                         print len(visited_links), 'content_link', get_content_page(url=new_url, visited_links=visited_links)
+                        if len(visited_links)>40:
+                            return data
                 #values_debug = [content_value, class_content, link_document]
                 #values_debug = [temp for temp in values_debug if temp]
                 #logger.debug(values_debug)
@@ -246,6 +249,8 @@ def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
+url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
+url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
 
 data_doc = {'geral_data': {}}
 data_doc = get_general_data(url, data_doc)
@@ -285,3 +290,6 @@ for pg in paginator:
 
 print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
 print 'links visitados: ', len(visited_link)
+tmp = TO(**data_doc)
+print tmp.documentos_relacionados
+print json.dumps(tmp)
