@@ -2,6 +2,8 @@
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
 from data_model import TO
+from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 import requests
 import re
 import time
@@ -9,6 +11,7 @@ import logging
 import helper
 import json
 import sys
+import traceback
 
 formatter = logging.Formatter(
     "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -46,6 +49,30 @@ match_tr = re.compile(
 
 match_tr_subtable = re.compile(r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
 
+client = MongoClient()
+db = client.notas_empenho
+collect = db.documents
+
+start_ = time.time()
+
+def save_or_update(doc):
+    try:
+        key = {"_id": doc['dados_basicos']['documento'][0]}
+        result = collect.replace_one(key,doc,upsert=True)
+    except DuplicateKeyError as e:
+        print e
+        logger.debug("move on - DuplaceteKey")
+    except KeyError as e:
+        traceback.print_exc()
+        logger.debug("move on")
+
+def try_numeric(value):
+    try:
+        value = float(value)
+    except:
+        pass
+    return value
+
 def _normalize_text(txt, codif='utf-8'):
     if isinstance(txt, str):
         txt = txt.decode(codif, "ignore")
@@ -67,7 +94,6 @@ def get_general_data(url, data=None):
         data['geral_data']['type_doc'] = dt.group("type_doc")
         data['geral_data']['num_doc'] = dt.group("num_doc")
         data['geral_data']['session'] = dt.group("session")
-    logger.debug(data_doc)
 
     return data
 
@@ -87,16 +113,17 @@ def get_content_page(url, visited_links=None, data=None):
         paginator = True
         
     try:
-        print url
-        time.sleep(2)
+        logger.debug((len(visited_links), url))
+        time.sleep(1)
         result = requests.get(url, timeout=10)
     except:
-        page = 'page%s.html' % base_data.findall(url)[0][-1]
+        #page = 'page%s.html' % base_data.findall(url)[0][-1]
 
-        if type_session == 'liquidacao':
-            page = 'liquidacao.html'
-        print page
-        result = helper.Reader(page)
+        #if type_session == 'liquidacao':
+        #    page = 'liquidacao.html'
+        #print page
+        #result = helper.Reader(page)
+        return data
         
     no_spaces = clean_result(result)
     data = load_content(no_spaces, paginator, data, visited_links)
@@ -124,6 +151,7 @@ def load_content(content, paginator=False, data=None, visited_links=None):
                     content_[subtable_headers[-1]] = {}
                     continue
                 else:
+                    content_value = try_numeric(content_value)
                     if not content_[subtable_headers[z]]:
                         content_[subtable_headers[z]] = [content_value]
                     else:
@@ -210,6 +238,7 @@ def load_content(content, paginator=False, data=None, visited_links=None):
                             data[head[0]][sub_head[-1]] = {}
                 else:                       
                     count_rotulo -=1
+                    content_value = try_numeric(content_value)
                     if len(head) > 1 and not sub_head:
                         if not data[head[0]][head[z+1]]:
                             data[head[0]][head[z+1]] = [content_value]
@@ -233,9 +262,8 @@ def load_content(content, paginator=False, data=None, visited_links=None):
                     if new_url not in visited_links:
                         visited_links.append(new_url)
                         #TODO: Save content in another document
-                        print len(visited_links), 'content_link', get_content_page(url=new_url, visited_links=visited_links)
-                        if len(visited_links)>40:
-                            return data
+                        new_doc = get_content_page(url=new_url, visited_links=visited_links)
+                        save_or_update(new_doc)
                 #values_debug = [content_value, class_content, link_document]
                 #values_debug = [temp for temp in values_debug if temp]
                 #logger.debug(values_debug)
@@ -249,8 +277,8 @@ def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
-url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
-url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
+#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
+#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
 
 data_doc = {'geral_data': {}}
 data_doc = get_general_data(url, data_doc)
@@ -276,6 +304,7 @@ except:
 visited_link = [url]
 no_spaces = clean_result(result)
 load_content(no_spaces, data=data_doc, visited_links=visited_link)
+
 print 'eh estatico? ', data_doc['geral_data'].get('estatico')
 paginator = get_paginator.findall(no_spaces)
 end_link_paginator = '&pagina=%s#paginacao'
@@ -290,6 +319,8 @@ for pg in paginator:
 
 print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
 print 'links visitados: ', len(visited_link)
-tmp = TO(**data_doc)
-print tmp.documentos_relacionados
-print json.dumps(tmp)
+
+save_or_update(data_doc)
+
+print 'finish in: ', time.time() - start_
+
