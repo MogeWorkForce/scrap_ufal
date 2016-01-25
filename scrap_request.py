@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
-from data_model import TO
+from data_model.to import TO
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 import requests
@@ -12,6 +12,7 @@ import helper
 import json
 import sys
 import traceback
+import argparse
 
 formatter = logging.Formatter(
     "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -23,6 +24,14 @@ logger.setLevel(level_debug)
 file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
+
+parser = argparse.ArgumentParser(description="Set a Url to crawler")
+parser.add_argument('-u', '--url', type=str,
+                    help="Url to search notas_empenhos")
+
+args = parser.parse_args()
+if not args.url:
+    raise Exception("Url not passed, please set a url in arguments")
 
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
@@ -96,6 +105,9 @@ def get_general_data(url, data=None):
         data['geral_data']['num_doc'] = dt.group("num_doc")
         data['geral_data']['session'] = dt.group("session")
 
+    print base_data.findall(url)[0]
+    
+    data['geral_data']['url'] = url
     return data
 
     
@@ -277,9 +289,11 @@ def load_content(content, paginator=False, data=None, visited_links=None):
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
-url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
+#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
+
+url = args.url
 
 data_doc = {'geral_data': {}}
 data_doc = get_general_data(url, data_doc)
@@ -290,23 +304,12 @@ try:
     data_doc['geral_data']['estatico'] = False
     data_doc['geral_data']['url'] = url
 except:
-    print 'leu um arquivo estatico'
-    #page = 'clonepage1.html'
-    page = 'page1.html'
-    print 'error'
-    #page = 'liquidacao.html'
-    #time.sleep(3)
-    print page
-    result = helper.Reader(page)
-    data_doc['geral_data']['estatico'] = True
-    data_doc['geral_data']['arquivo'] = page
-    data_doc['geral_data']['url'] = url
+    raise Exception("Request fail")
 
 visited_link = [url]
 no_spaces = clean_result(result)
 load_content(no_spaces, data=data_doc, visited_links=visited_link)
 
-print 'eh estatico? ', data_doc['geral_data'].get('estatico')
 paginator = get_paginator.findall(no_spaces)
 end_link_paginator = '&pagina=%s#paginacao'
 for pg in paginator:
