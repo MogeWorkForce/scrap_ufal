@@ -25,15 +25,6 @@ file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-parser = argparse.ArgumentParser(description="Set a Url to crawler")
-parser.add_argument('-u', '--url', type=str,
-                    help="Url to search notas_empenhos")
-
-args = parser.parse_args()
-if not args.url:
-    raise Exception("Url not passed, please set a url in arguments")
-
-
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
                        r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>[a-zA-Z0-9]*)'
                        r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
@@ -293,38 +284,47 @@ def clean_result(result):
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
 #url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
 
-url = args.url
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Set a Url to crawler")
+    parser.add_argument('-u', '--url', type=str,
+                        help="Url to search notas_empenhos")
 
-data_doc = {'geral_data': {}}
-data_doc = get_general_data(url, data_doc)
-print data_doc
+    args = parser.parse_args()
+    if not args.url:
+        raise Exception("Url not passed, please set a url in arguments")
+    
+    url = args.url
 
-try:
-    result = requests.get(url, timeout=10)
-    data_doc['geral_data']['estatico'] = False
-    data_doc['geral_data']['url'] = url
-except:
-    raise Exception("Request fail")
+    data_doc = {'geral_data': {}}
+    data_doc = get_general_data(url, data_doc)
+    print data_doc
 
-visited_link = [url]
-no_spaces = clean_result(result)
-load_content(no_spaces, data=data_doc, visited_links=visited_link)
+    try:
+        result = requests.get(url, timeout=10)
+        data_doc['geral_data']['estatico'] = False
+        data_doc['geral_data']['url'] = url
+    except:
+        raise Exception("Request fail")
 
-paginator = get_paginator.findall(no_spaces)
-end_link_paginator = '&pagina=%s#paginacao'
-for pg in paginator:
-    end, init = pg
-    for next_pg in xrange(int(init)+1, int(end)+1):
-        link_ = url+end_link_paginator % next_pg
-        logger.debug(link_)
-        if link_ not in visited_link:
-            data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
-            visited_link.append(link_)
+    visited_link = [url]
+    no_spaces = clean_result(result)
+    load_content(no_spaces, data=data_doc, visited_links=visited_link)
 
-print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
-print 'links visitados: ', len(visited_link)
+    paginator = get_paginator.findall(no_spaces)
+    end_link_paginator = '&pagina=%s#paginacao'
+    for pg in paginator:
+        end, init = pg
+        for next_pg in xrange(int(init)+1, int(end)+1):
+            link_ = url+end_link_paginator % next_pg
+            logger.debug(link_)
+            if link_ not in visited_link:
+                data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
+                visited_link.append(link_)
 
-save_or_update(data_doc)
+    print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
+    print 'links visitados: ', len(visited_link)
 
-print 'finish in: ', time.time() - start_
+    save_or_update(data_doc)
+
+    print 'finish in: ', time.time() - start_
 
