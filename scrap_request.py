@@ -60,7 +60,7 @@ def save_or_update(doc):
         result = collect.replace_one(key,doc,upsert=True)
     except DuplicateKeyError as e:
         print e
-        logger.debug("move on - DuplaceteKey")
+        logger.debug("move on - DuplicateKey")
     except KeyError as e:
         traceback.print_exc()
         logger.debug("move on")
@@ -94,8 +94,6 @@ def get_general_data(url, data=None):
         data['geral_data']['type_doc'] = dt.group("type_doc")
         data['geral_data']['num_doc'] = dt.group("num_doc")
         data['geral_data']['session'] = dt.group("session")
-
-    print 'tupla?', base_data.findall(url)[0]
     
     data['geral_data']['url'] = url
     return data
@@ -104,7 +102,7 @@ def get_general_data(url, data=None):
 def cleaned_content(url, visited_links):
     try:
         logger.debug((len(visited_links), url))
-        time.sleep(0.3)
+        time.sleep(2)
         result = requests.get(url, timeout=10)
         visited_links.append(url)
     except:
@@ -120,12 +118,7 @@ def get_content_page(url, visited_links=None, data=None):
     if not visited_links:
         visited_links = []
     data = get_general_data(url, data)
-    # type_session = base_data.findall(url)[0][2]
-    # num_page = base_data.findall(url)[0][-1]
-    # num_page = int(num_page) if num_page else 1
     paginator = False
-    # if num_page >1:
-    #     paginator = True
         
     try:
         result = cleaned_content(url, visited_links)
@@ -148,7 +141,6 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
         visited_links = []
         
     table_content = match.findall(content_original)
-    adjust_headers = []
     subtable = match_subtable.findall(content_original)
     content_subtable = []
 
@@ -280,15 +272,20 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
     
     paginas = get_paginator.findall(content_original)
     end_link_paginator = '&pagina=%s#paginacao'
-    print paginator
     for pg in paginas[:1]:
-        end, _ = pg
+        _, end = pg
         for next_pg in xrange(1, int(end)+1):
-            link_ = url+end_link_paginator % next_pg
+            url_ = data['geral_data']['url_base']+'/'+data['geral_data']['session']+"/"
+            url_ += data['geral_data']['type_doc']+'?documento='+data['geral_data']['num_doc']
+            if next_pg == 1:
+                link_ = url_
+            else:
+                link_ = url_+end_link_paginator % next_pg
+
             logger.debug(link_)
             if link_ not in visited_link:
                 try:
-                    result = cleaned_content(url, visited_links)
+                    result = cleaned_content(link_, visited_links)
                 except Exception as e:
                     print str(e)
                     continue
@@ -296,24 +293,21 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
                 no_spaces = result
                 
                 data = load_content(no_spaces, True, data, visited_links)
-
-            
+            logger.warning('---end page %s, url: %s' %(next_pg, url_))
 
     #logger.warning(json.dumps(data, indent=2))
+    save_or_update(data)
     #docs_relacionados = []
+    print docs_relacionados
     for new_url in docs_relacionados:
         new_doc = get_content_page(url=new_url, visited_links=visited_links)
-        # save_or_update(new_doc)
-        visited_links.append(new_url)
+        save_or_update(new_doc)
 
     return data
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
@@ -330,29 +324,6 @@ if __name__ == '__main__':
     visited_link = [url]
     
     data_doc = get_content_page(url, visited_links=visited_link)
-    # print data_doc
-
-    # try:
-    #     result = requests.get(url, timeout=10)
-    #     data_doc['geral_data']['url'] = url
-    # except:
-    #     raise Exception("Request fail")
-
-    
-    # no_spaces = clean_result(result)
-    # load_content(no_spaces, data=data_doc, visited_links=visited_link)
-
-    # paginator = get_paginator.findall(no_spaces)
-    # print paginator
-    # end_link_paginator = '&pagina=%s#paginacao'
-    #for pg in paginator:
-    #    end, init = pg
-    #    for next_pg in xrange(int(init)+1, int(end)+1):
-    #        link_ = url+end_link_paginator % next_pg
-    #        logger.debug(link_)
-    #        if link_ not in visited_link:
-    #            data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
-    #            visited_link.append(link_)
 
     print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
     print 'links visitados: ', len(visited_link)
