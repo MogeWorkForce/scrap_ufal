@@ -15,7 +15,7 @@ import traceback
 import argparse
 
 formatter = logging.Formatter(
-    "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
+    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger("Scrap_Ufal")
@@ -30,8 +30,7 @@ base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
                        r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
-get_paginator = re.compile(r'<span class="paginaXdeN">.*(?P<inicio>\d{1,3}?)'
-                           r'.*(?P<fim>\d{1,3})</span>')
+get_paginator = re.compile(r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
 match_content = re.compile(
@@ -96,12 +95,24 @@ def get_general_data(url, data=None):
         data['geral_data']['num_doc'] = dt.group("num_doc")
         data['geral_data']['session'] = dt.group("session")
 
-    print base_data.findall(url)[0]
+    print 'tupla?', base_data.findall(url)[0]
     
     data['geral_data']['url'] = url
     return data
 
+#TODO: pessimo nome, mudar isso depois
+def cleaned_content(url, visited_links):
+    try:
+        logger.debug((len(visited_links), url))
+        time.sleep(0.3)
+        result = requests.get(url, timeout=10)
+        visited_links.append(url)
+    except:
+        raise Exception("Timeout!")
+    no_spaces = clean_result(result)
+    return no_spaces
     
+
 def get_content_page(url, visited_links=None, data=None):
     if not data:
         data = {}
@@ -109,38 +120,39 @@ def get_content_page(url, visited_links=None, data=None):
     if not visited_links:
         visited_links = []
     data = get_general_data(url, data)
-    type_session = base_data.findall(url)[0][2]
-    num_page = base_data.findall(url)[0][-1]
-    num_page = int(num_page) if num_page else 1
+    # type_session = base_data.findall(url)[0][2]
+    # num_page = base_data.findall(url)[0][-1]
+    # num_page = int(num_page) if num_page else 1
     paginator = False
-    if num_page >1:
-        paginator = True
+    # if num_page >1:
+    #     paginator = True
         
     try:
-        logger.debug((len(visited_links), url))
-        time.sleep(0.5)
-        result = requests.get(url, timeout=10)
-    except:
+        result = cleaned_content(url, visited_links)
+    except Exception as e:
         #page = 'page%s.html' % base_data.findall(url)[0][-1]
 
         #if type_session == 'liquidacao':
         #    page = 'liquidacao.html'
         #print page
         #result = helper.Reader(page)
+        logger.warning(str(e))
         return data
         
-    no_spaces = clean_result(result)
+    no_spaces = result
     data = load_content(no_spaces, paginator, data, visited_links)
     return data
 
-def load_content(content, paginator=False, data=None, visited_links=None):
+def load_content(content_original, paginator=False, data=None, visited_links=None):
     if not visited_links:
         visited_links = []
         
-    table_content = match.findall(content)
+    table_content = match.findall(content_original)
     adjust_headers = []
-    subtable = match_subtable.findall(content)
+    subtable = match_subtable.findall(content_original)
     content_subtable = []
+
+    docs_relacionados = []
     for i, subtable in enumerate(subtable):
         content_ = {}
         subtable_headers = []
@@ -262,19 +274,38 @@ def load_content(content, paginator=False, data=None, visited_links=None):
 
                 link_document = content_row.group('link_document')
                 if link_document:
-                    new_url = data_doc['geral_data']['url_base']+'/'+data_doc['geral_data']['session']+'/'+link_document
+                    new_url = data['geral_data']['url_base']+'/'+data['geral_data']['session']+'/'+link_document
                     if new_url not in visited_links:
-                        visited_links.append(new_url)
-                        #TODO: Save content in another document
-                        new_doc = get_content_page(url=new_url, visited_links=visited_links)
-                        save_or_update(new_doc)
-                #values_debug = [content_value, class_content, link_document]
-                #values_debug = [temp for temp in values_debug if temp]
-                #logger.debug(values_debug)
-                #logger.debug("tr "+last_key_tr)
-                #logger.debug("th "+last_key_th)
-            #print i, j, head, sub_head, rotulo
+                        docs_relacionados.append(new_url)
+    
+    paginas = get_paginator.findall(content_original)
+    end_link_paginator = '&pagina=%s#paginacao'
+    print paginator
+    for pg in paginas[:1]:
+        end, _ = pg
+        for next_pg in xrange(1, int(end)+1):
+            link_ = url+end_link_paginator % next_pg
+            logger.debug(link_)
+            if link_ not in visited_link:
+                try:
+                    result = cleaned_content(url, visited_links)
+                except Exception as e:
+                    print str(e)
+                    continue
+        
+                no_spaces = result
+                
+                data = load_content(no_spaces, True, data, visited_links)
+
+            
+
     #logger.warning(json.dumps(data, indent=2))
+    #docs_relacionados = []
+    for new_url in docs_relacionados:
+        new_doc = get_content_page(url=new_url, visited_links=visited_links)
+        # save_or_update(new_doc)
+        visited_links.append(new_url)
+
     return data
 
 def clean_result(result):
@@ -295,36 +326,38 @@ if __name__ == '__main__':
     
     url = args.url
 
-    data_doc = {'geral_data': {}}
-    data_doc = get_general_data(url, data_doc)
-    print data_doc
-
-    try:
-        result = requests.get(url, timeout=10)
-        data_doc['geral_data']['estatico'] = False
-        data_doc['geral_data']['url'] = url
-    except:
-        raise Exception("Request fail")
-
+    data_doc = {}
     visited_link = [url]
-    no_spaces = clean_result(result)
-    load_content(no_spaces, data=data_doc, visited_links=visited_link)
+    
+    data_doc = get_content_page(url, visited_links=visited_link)
+    # print data_doc
 
-    paginator = get_paginator.findall(no_spaces)
-    end_link_paginator = '&pagina=%s#paginacao'
-    for pg in paginator:
-        end, init = pg
-        for next_pg in xrange(int(init)+1, int(end)+1):
-            link_ = url+end_link_paginator % next_pg
-            logger.debug(link_)
-            if link_ not in visited_link:
-                data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
-                visited_link.append(link_)
+    # try:
+    #     result = requests.get(url, timeout=10)
+    #     data_doc['geral_data']['url'] = url
+    # except:
+    #     raise Exception("Request fail")
+
+    
+    # no_spaces = clean_result(result)
+    # load_content(no_spaces, data=data_doc, visited_links=visited_link)
+
+    # paginator = get_paginator.findall(no_spaces)
+    # print paginator
+    # end_link_paginator = '&pagina=%s#paginacao'
+    #for pg in paginator:
+    #    end, init = pg
+    #    for next_pg in xrange(int(init)+1, int(end)+1):
+    #        link_ = url+end_link_paginator % next_pg
+    #        logger.debug(link_)
+    #        if link_ not in visited_link:
+    #            data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
+    #            visited_link.append(link_)
 
     print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
     print 'links visitados: ', len(visited_link)
 
-    save_or_update(data_doc)
+    #save_or_update(data_doc)
 
     print 'finish in: ', time.time() - start_
 
