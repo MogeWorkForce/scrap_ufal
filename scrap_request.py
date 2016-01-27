@@ -102,7 +102,7 @@ def get_general_data(url, data=None):
 def cleaned_content(url, visited_links):
     try:
         logger.debug((len(visited_links), url))
-        time.sleep(2)
+        time.sleep(1.3)
         headers = {
             'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
