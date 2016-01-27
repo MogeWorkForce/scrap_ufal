@@ -103,7 +103,10 @@ def cleaned_content(url, visited_links):
     try:
         logger.debug((len(visited_links), url))
         time.sleep(2)
-        result = requests.get(url, timeout=10)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        }
+        result = requests.get(url, timeout=10, headers=headers)
         visited_links.append(url)
     except:
         raise Exception("Timeout!")
