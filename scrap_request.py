@@ -2,8 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
 from data_model.to import TO
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
+from data_model.dao import DocumentsDao
 import requests
 import re
 import time
@@ -48,22 +47,12 @@ match_tr = re.compile(
 
 match_tr_subtable = re.compile(r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
 
-client = MongoClient()
-db = client.notas_empenho
-collect = db.documents
+client = DocumentsDao()
 
 start_ = time.time()
 
 def save_or_update(doc):
-    try:
-        key = {"_id": doc['dados_basicos']['documento'][0]}
-        result = collect.replace_one(key,doc,upsert=True)
-    except DuplicateKeyError as e:
-        print e
-        logger.debug("move on - DuplicateKey")
-    except KeyError as e:
-        traceback.print_exc()
-        logger.debug("move on")
+    client.insert_document(doc, upsert=True)
 
 def try_numeric(value):
     try:
@@ -202,8 +191,6 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
             last_key_tr = ''
             last_key_th = ''
             sub_head = []
-            counter_sub_head = 1
-            title = True
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
                 if class_tr in ('cabecalho', 'titulo'):
@@ -213,12 +200,10 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
                     if paginator:
                         continue
                     if class_tr == 'titulo':
-                        title = True
                         data[head[-1]] = {}
                         continue
                     else:
                         data[head[0]][head[-1]] = {}
-                        title = False
                         continue
 
                 class_content = content_row.group('class')
@@ -285,7 +270,7 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
             else:
                 link_ = url_+end_link_paginator % next_pg
 
-            logger.debug(link_)
+            #logger.debug(link_)
             if link_ not in visited_link:
                 try:
                     result = cleaned_content(link_, visited_links)
@@ -300,11 +285,13 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
 
     #logger.warning(json.dumps(data, indent=2))
     save_or_update(data)
+    #print docs_relacionados
     #docs_relacionados = []
-    print docs_relacionados
-    for new_url in docs_relacionados:
-        new_doc = get_content_page(url=new_url, visited_links=visited_links)
-        save_or_update(new_doc)
+    client._url.set_chunk_url(docs_relacionados)
+
+    # for new_url in docs_relacionados:
+    #     new_doc = get_content_page(url=new_url, visited_links=visited_links)
+    #     save_or_update(new_doc)
 
     return data
 
