@@ -24,10 +24,9 @@ class DocumentsDao(MongoClient):
             key = {"_id": doc['dados_basicos']['documento'][0]}
             result = self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
-
             url_ = doc['geral_data']['url_base']+'/'+doc['geral_data']['session']+"/"
             url_ += doc['geral_data']['type_doc']+'?documento='+doc['geral_data']['num_doc']
-            self._url.add_urls_day(url_)
+            self._url.dinamic_url('queue', url_)
 
         except DuplicateKeyError as e:
             print e
@@ -45,24 +44,25 @@ class UrlManagerDao(MongoClient):
         self.queue = self.db_urls.queue
         self.fallback = self.db_urls.fallback
 
-    def add_urls_day(self, url):
-        today = date.today()
-        key = {"_id": today.strftime("%d/%m/%Y")}
+    def set_chunk_url(self, list_url):
+        date_ = date.today()
+        key = {"_id": date_.strftime("%d/%m/%Y")}
         data = {
             "$addToSet": {
-                "urls": url
+                "urls": {"$each": list_url}
             }
         }
+
+        logger.debug(('lista de Urls:', list_url))
 
         skip = False
         try:
             tmp = key
-            tmp.update({"urls": [url]})
-            result = self.queue.insert_one(tmp)
+            tmp.update({"urls": list_url})
+            result = self.db_urls.queue.insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
-            print str(e)
-            logger.debug("Expected error - move on - DuplicateKey")
+            logger.debug("Expected error - move on addToSet - DuplicateKey")
 
         if not skip:
             try:
@@ -72,22 +72,33 @@ class UrlManagerDao(MongoClient):
                 logger.debug("move on - DuplicateKey")
             except KeyError:
                 traceback.print_exc()
-                logger.debug("move on - add_urls_day")
+                logger.debug("move on - Set_chunk_url")
 
-    def set_chunk_url(self, list_url):
+    def dinamic_url(self, collection, url):
         date_ = date.today()
         key = {"_id": date_.strftime("%d/%m/%Y")}
         data = {
             "$addToSet": {
-                "urls": {"$each": list_url}
+                "urls": url
             }
         }
+        logger.debug((key, data, collection, url))
+        skip = False
         try:
-            result = self.queue.update_one(key, data)
+            tmp = key
+            tmp.update({"urls": [url]})
+            result = self.db_urls[collection].insert_one(tmp)
+            skip = True
         except DuplicateKeyError as e:
-            print e
-            logger.debug("move on - DuplicateKey")
-        except KeyError:
-            traceback.print_exc()
-            logger.debug("move on - Set_chunk_url")
+            logger.debug("Expected error - move on - DuplicateKey")
 
+        if not skip:
+            try:
+                result = self.db_urls[collection].update_one(key, data)
+            except DuplicateKeyError as e:
+                print e
+                logger.debug("move on - DuplicateKey")
+            except KeyError:
+                traceback.print_exc()
+                logger.debug("move on - add_urls_day")
+                self.dinamic_url('fallback', url)
