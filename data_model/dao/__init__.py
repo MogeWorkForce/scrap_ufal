@@ -2,9 +2,12 @@
 from __future__ import absolute_import, unicode_literals
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
+from datetime import date
 import logging
 import traceback
-from datetime import date
+import copy
+
+
 
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
 logger.setLevel(logging.DEBUG)
@@ -53,11 +56,9 @@ class UrlManagerDao(MongoClient):
             }
         }
 
-        logger.debug(('lista de Urls:', list_url))
-
         skip = False
         try:
-            tmp = key
+            tmp = copy.deepcopy(key)
             tmp.update({"urls": list_url})
             result = self.db_urls.queue.insert_one(tmp)
             skip = True
@@ -82,10 +83,9 @@ class UrlManagerDao(MongoClient):
                 "urls": url
             }
         }
-        logger.debug((key, data, collection, url))
         skip = False
         try:
-            tmp = key
+            tmp = copy.deepcopy(key)
             tmp.update({"urls": [url]})
             result = self.db_urls[collection].insert_one(tmp)
             skip = True

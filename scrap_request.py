@@ -281,7 +281,7 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
                 no_spaces = result
                 
                 data = load_content(no_spaces, True, data, visited_links)
-            logger.warning('---end page %s, url: %s' %(next_pg, url_))
+            #logger.warning('---end page %s, url: %s' %(next_pg, url_))
 
     #logger.warning(json.dumps(data, indent=2))
     save_or_update(data)
