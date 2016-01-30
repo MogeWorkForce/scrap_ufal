@@ -71,9 +71,6 @@ class UrlManagerDao(MongoClient):
             except DuplicateKeyError as e:
                 print e
                 logger.debug("move on - DuplicateKey")
-            except KeyError:
-                traceback.print_exc()
-                logger.debug("move on - Set_chunk_url")
 
     def dinamic_url(self, collection, url):
         date_ = date.today()
@@ -88,7 +85,7 @@ class UrlManagerDao(MongoClient):
             tmp = copy.deepcopy(key)
             tmp.update({"urls": [url]})
             result = self.db_urls[collection].insert_one(tmp)
-            inserted_today = self.db_urls[collection+"_today"].insert_one(tmp)
+            inserted_today = self.db_urls["queue_loaded"].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
             logger.debug("Expected error - move on - DuplicateKey")
@@ -96,14 +93,10 @@ class UrlManagerDao(MongoClient):
         if not skip:
             try:
                 result = self.db_urls[collection].update_one(key, data)
-                inserted_today = self.db_urls[collection+"_today"].update_one(key, data)
+                inserted_today = self.db_urls["queue_loaded"].update_one(key, data)
             except DuplicateKeyError as e:
                 print e
                 logger.debug("move on - DuplicateKey")
-            except KeyError:
-                traceback.print_exc()
-                logger.debug("move on - add_urls_day")
-                self.dinamic_url('fallback', url)
 
     def remove_urls(self, list_urls, collection='queue'):
         date_ = date.today()
@@ -116,16 +109,13 @@ class UrlManagerDao(MongoClient):
 
         result = self.db_urls[collection].update(key, data)
 
-    def verify_today_urls(self, url, collection='queue_today'):
+    def verify_today_urls(self, url, collection='queue_loaded'):
         date_ = date.today()
         params = {
             "_id": date_.strftime("%d/%m/%Y"),
-            "$in": [url]
+            "urls": {"$in": [url]}
         }
 
         result = self.db_urls[collection].find(params)
-        try:
-            print result.hint('_id').count()
-        except:
-            traceback.print_exc()
-            print len(result)
+        return bool(list(result))
+

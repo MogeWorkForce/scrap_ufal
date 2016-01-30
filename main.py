@@ -24,7 +24,7 @@ logger.addHandler(file_handler)
 
 if __name__ == '__main__':
     executors = {
-        'default': ThreadPoolExecutor(5),
+        'default': ThreadPoolExecutor(10),
         'processpool': ProcessPoolExecutor(5)
     }
 
@@ -33,10 +33,11 @@ if __name__ == '__main__':
         'max_instances': 3
     }
 
-    # logScheduller = logging.getLogger('Scrap_Ufal.Scheduler--')
-    # logScheduller.setLevel(level_debug)
+    logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
+    logScheduller.setLevel(logging.DEBUG)
 
-    scheduler = BackgroundScheduler(logger=logger, executors=executors, job_defaults=job_defaults)
+    scheduler = BackgroundScheduler(logger=logScheduller, executors=executors, job_defaults=job_defaults)
+    #scheduler._logger.setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
@@ -52,6 +53,7 @@ if __name__ == '__main__':
     batch = args.batch
 
     url_on_queue = lambda: load_url_from_queue(int(batch))
+    url_on_fallback = lambda: load_url_from_queue(int(batch), collection="fallback")
 
     try:
         visited_links = [url]
@@ -60,9 +62,10 @@ if __name__ == '__main__':
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
-        sys.exit(1)
+        #sys.exit(1)
 
-    scheduler.add_job(url_on_queue, trigger='interval', seconds=11)
+    scheduler.add_job(url_on_queue, trigger='interval', seconds=9)
+    scheduler.add_job(url_on_fallback, trigger='interval', seconds=9)
     scheduler.start()
 
     try:

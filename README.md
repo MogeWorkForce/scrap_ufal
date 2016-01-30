@@ -28,10 +28,14 @@ Se tiver problemas de como trabalhar com virtualenvs no Windows, recomendo ler e
   * Captura dos documentos relacionados, apenas printando o resultado no momento.
   * Gerar um Json resultante.
   * Evitar um loop infinito ao acessar um documento relacionado.
-
-7 - Próximos passos:
   * Persistência dos dados, gerar uma interface de conexão ao Banco de Dados.
-  * Decidir qual o banco de dados será utilizado (inicialmente MongoDB está nos planos).
-  * Interface para introduzir "Regras".
+  * Banco de Dados, inicialmente MongoDB.
   * Paralelizar a captura dos dados (aplicada aos Documentos Relacionados).
   * Engenharia reversa (dada uma Nota de Liquidação/Pagamento ou Empenho (espécie: Reforço)) capturar todos os dados gerando o conteúdo da Nota de Empenho Original.
+
+7 - Próximos passos:
+  * Interface para introduzir "Regras".
+  * Interface Web:
+    * Introduzir novas Urls
+    * Visualizar quantas Urls foram processadas nos últimos 7 dias (fallback ou principal).
+    * Consulta de Documentos em específico.
