@@ -15,8 +15,8 @@ Para conseguir rodar o script, efetuar o seguinte comando, com python (2.7.X) in
 
 
 3 - Ativando a virtualenv (estando no mesmo diretório):
-  - source ./NOME_DA_VIRTUALENV/bin/activate (Unix)
-  - NOME_DA_VIRTUALENV\Scripts\activate
+  - source ./NOME_DA_VIRTUALENV/bin/activate (Unix e Mac)
+  - NOME_DA_VIRTUALENV\Scripts\activate (Windows)
   
 4 - pip install -r requeriments.txt
 
@@ -39,3 +39,8 @@ Se tiver problemas de como trabalhar com virtualenvs no Windows, recomendo ler e
     * Introduzir novas Urls
     * Visualizar quantas Urls foram processadas nos últimos 7 dias (fallback ou principal).
     * Consulta de Documentos em específico.
+
+8 - Como rodar:
+  * python main.py -u "URL" -b BATCH
+    * URL: Url que irá ser processada, salvando o documento e abrindo espaço para o processamento de novas Urls (vindas dos Documentos Relacionados), enfileirando numa queue.
+    * BATCH: Número entre 1 à 20, será a quantidade de URLs vindas das queues e fallback para serem processadas.
