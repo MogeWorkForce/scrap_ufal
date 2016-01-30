@@ -2,7 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
 from data_model.to import TO
-from data_model.dao import DocumentsDao
+from data_model.dao.mongodb import DocumentsDao
 import requests
 import re
 import time
@@ -12,17 +12,18 @@ import json
 import sys
 import traceback
 import argparse
+from datetime import date
 
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
+# formatter = logging.Formatter(
+#     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
+#     datefmt='%Y-%m-%d %H:%M:%S'
+# )
+logger = logging.getLogger("Scrap_Ufal.scraper")
 level_debug = logging.DEBUG
 logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+# file_handler = logging.StreamHandler()
+# file_handler.setFormatter(formatter)
+# logger.addHandler(file_handler)
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
                        r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>[a-zA-Z0-9]*)'
@@ -90,8 +91,8 @@ def get_general_data(url, data=None):
 #TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links):
     try:
+        time.sleep(2.3)
         logger.debug((len(visited_links), url))
-        time.sleep(1.3)
         headers = {
             'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
@@ -258,51 +259,92 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
                     if new_url not in visited_links:
                         docs_relacionados.append(new_url)
     
-    paginas = get_paginator.findall(content_original)
-    end_link_paginator = '&pagina=%s#paginacao'
-    for pg in paginas[:1]:
-        _, end = pg
-        for next_pg in xrange(1, int(end)+1):
-            url_ = data['geral_data']['url_base']+'/'+data['geral_data']['session']+"/"
-            url_ += data['geral_data']['type_doc']+'?documento='+data['geral_data']['num_doc']
-            if next_pg == 1:
-                link_ = url_
-            else:
-                link_ = url_+end_link_paginator % next_pg
+    if not paginator:
+        paginas = get_paginator.findall(content_original)
+        end_link_paginator = '&pagina=%s#paginacao'
+        for pg in paginas[:1]:
+            _, end = pg
+            for next_pg in xrange(1, int(end)+1):
+                url_ = data['geral_data']['url_base']+'/'+data['geral_data']['session']+"/"
+                url_ += data['geral_data']['type_doc']+'?documento='+data['geral_data']['num_doc']
+                if next_pg == 1:
+                    link_ = url_
+                else:
+                    link_ = url_+end_link_paginator % next_pg
 
-            #logger.debug(link_)
-            if link_ not in visited_link:
-                try:
-                    result = cleaned_content(link_, visited_links)
-                except Exception as e:
-                    print str(e)
-                    continue
-        
-                no_spaces = result
-                
-                data = load_content(no_spaces, True, data, visited_links)
+                #logger.debug(link_)
+                if link_ not in visited_links:
+                    try:
+                        result = cleaned_content(link_, visited_links)
+                    except Exception as e:
+                        print str(e)
+                        continue
+            
+                    no_spaces = result
+                    
+                    data = load_content(no_spaces, True, data, visited_links)
             #logger.warning('---end page %s, url: %s' %(next_pg, url_))
 
     #logger.warning(json.dumps(data, indent=2))
-    save_or_update(data)
-    #print docs_relacionados
-    #docs_relacionados = []
+    if not paginator:
+        save_or_update(data)
+        
     client._url.set_chunk_url(docs_relacionados)
-
-    # for new_url in docs_relacionados:
-    #     new_doc = get_content_page(url=new_url, visited_links=visited_links)
-    #     save_or_update(new_doc)
 
     return data
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
+def load_url_from_queue(batch=1):
+    try:
+
+        import random
+        logger.debug(('-----start new job! Batches: ', batch))
+        date_ = date.today()
+        key = {"_id": date_.strftime("%d/%m/%Y")}
+        urls_load = client._url.queue.find_one(key)
+
+        length_urls = len(urls_load['urls'])
+
+        if length_urls <= 0:
+            logger.warning("Finish the Process all Urls")
+            return
+
+        init_ = random.randint(1, length_urls+1)
+        logger.debug("_______Interval %s to %s" % (init_, init_+batch))
+        tmp_urls_load = urls_load['urls'][init_:init_+batch]
+
+        try:
+            client._url.remove_urls(tmp_urls_load)
+            logger.debug(('-----pass to remove_urls! Batches: ', batch))
+        except Exception as e:
+            traceback.print_exc()
+            logger.warning("Error on remove urls")
+
+        visited_link = []
+        for url in tmp_urls_load:
+            try:
+                client._url.verify_today_urls(url)
+
+                logger.debug('-----start load url_from queue!')
+                get_content_page(url, visited_links=visited_link)
+            except:
+                traceback.print_exc()
+                client._url.dinamic_url('fallback', url)
+    except:
+        traceback.print_exc()
+        return
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
+
+    parser.add_argument('-b', '--batch', type=int, choice=range(1, 21),
+                        help="How many urls will be loaded inside the queue")
+
 
     args = parser.parse_args()
     if not args.url:
