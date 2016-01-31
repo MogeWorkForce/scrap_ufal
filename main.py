@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     job_defaults = {
         'coalesce': False,
-        'max_instances': 3
+        'max_instances': 2
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
@@ -45,27 +45,37 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--batch', type=int, choices=range(1, 21),
                         help="How many urls will be loaded inside the queue")
 
+    parser.add_argument('-i', '--ignore', action="store_true",
+                        help="Ignore url passed")
+
     args = parser.parse_args()
-    if not args.url:
-        raise Exception("Url not passed, please set a url in arguments")
-    
+    if not args.ignore:
+        if not args.url:
+            raise Exception("Url not passed, please set a url in arguments")
+    else:
+        logger.warning("Start ignoring url passed on parameter")
+        
     url = args.url
     batch = args.batch
 
     url_on_queue = lambda: load_url_from_queue(int(batch))
-    url_on_fallback = lambda: load_url_from_queue(int(batch), collection="fallback")
+    url_on_fallback = lambda: load_url_from_queue(
+            int(batch) if int(batch) <=2 else round(int(batch)/2.0),
+            collection="fallback"
+        )
 
     try:
-        visited_links = [url]
-        #get_content_page(url, visited_links=visited_links)
-        url_on_queue()
+        if not args.ignore:
+            visited_links = [url]
+            get_content_page(url, visited_links=visited_links)
+        #url_on_queue()
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
         #sys.exit(1)
 
-    scheduler.add_job(url_on_queue, trigger='interval', seconds=9)
-    scheduler.add_job(url_on_fallback, trigger='interval', seconds=9)
+    scheduler.add_job(url_on_queue, trigger='interval', seconds=12)
+    scheduler.add_job(url_on_fallback, trigger='interval', seconds=15)
     scheduler.start()
 
     try:

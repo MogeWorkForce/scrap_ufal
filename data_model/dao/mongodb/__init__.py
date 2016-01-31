@@ -7,8 +7,6 @@ import logging
 import traceback
 import copy
 
-
-
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
 logger.setLevel(logging.DEBUG)
 
@@ -85,7 +83,6 @@ class UrlManagerDao(MongoClient):
             tmp = copy.deepcopy(key)
             tmp.update({"urls": [url]})
             result = self.db_urls[collection].insert_one(tmp)
-            inserted_today = self.db_urls["queue_loaded"].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
             logger.debug("Expected error - move on - DuplicateKey")
@@ -93,7 +90,6 @@ class UrlManagerDao(MongoClient):
         if not skip:
             try:
                 result = self.db_urls[collection].update_one(key, data)
-                inserted_today = self.db_urls["queue_loaded"].update_one(key, data)
             except DuplicateKeyError as e:
                 print e
                 logger.debug("move on - DuplicateKey")

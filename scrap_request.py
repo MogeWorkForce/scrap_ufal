@@ -86,7 +86,7 @@ def get_general_data(url, data=None):
 
 #TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links):
-    time.sleep(2.3)
+    time.sleep(3.5)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
@@ -313,6 +313,7 @@ def load_url_from_queue(batch=1, collection='queue'):
                 if not in_:
                     logger.debug('Start load url_from %s! %s' % (collection, url))
                     get_content_page(url, visited_links=visited_link)
+                    client._url.dinamic_url('queue_loaded', url)
                 else:
                     logger.warning("Url already loaded: %s" % url)
             except:
@@ -320,6 +321,7 @@ def load_url_from_queue(batch=1, collection='queue'):
                 client._url.dinamic_url('fallback', url)
                 logger.warning("Call Fallback to Url: %s" % url)
     except:
+        logger.debug('Errors on %s! To URL: %s' % (collection, url))
         traceback.print_exc()
         return
 
