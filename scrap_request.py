@@ -86,7 +86,7 @@ def get_general_data(url, data=None):
 
 #TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links):
-    time.sleep(3.5)
+    time.sleep(3.1)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
@@ -293,8 +293,11 @@ def load_url_from_queue(batch=1, collection='queue'):
         if length_urls <= 0:
             logger.warning("Finish the Process all Urls")
             return
-
-        init_ = random.randint(0, length_urls+1)
+        elif length_urls == 1:
+            init_ = 0
+        else:
+            init_ = random.randint(0, length_urls+1)
+        
         logger.debug("Interval %s to %s" % (init_, init_+batch))
         tmp_urls_load = urls_load['urls'][init_:init_+batch]
 
@@ -311,7 +314,7 @@ def load_url_from_queue(batch=1, collection='queue'):
                 in_ = client._url.verify_today_urls(url)
 
                 if not in_:
-                    logger.debug('Start load url_from %s! %s' % (collection, url))
+                    logger.debug('Start load url_from %s! %s' % (collection.upper(), url))
                     get_content_page(url, visited_links=visited_link)
                     client._url.dinamic_url('queue_loaded', url)
                 else:
@@ -321,8 +324,8 @@ def load_url_from_queue(batch=1, collection='queue'):
                 client._url.dinamic_url('fallback', url)
                 logger.warning("Call Fallback to Url: %s" % url)
     except:
-        logger.debug('Errors on %s! To URL: %s' % (collection, url))
         traceback.print_exc()
+        logger.debug('Errors on %s! To URL: %s' % (collection.upper(), url))
         return
 
 

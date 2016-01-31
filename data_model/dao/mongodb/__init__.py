@@ -22,6 +22,7 @@ class DocumentsDao(MongoClient):
 
     def insert_document(self, doc, upsert=False):
         try:
+            logger.debug(("data to insert: ", doc))
             key = {"_id": doc['dados_basicos']['documento'][0]}
             result = self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
@@ -32,9 +33,6 @@ class DocumentsDao(MongoClient):
         except DuplicateKeyError as e:
             print e
             logger.debug("move on - DuplicateKey")
-        except KeyError:
-            traceback.print_exc()
-            logger.debug("move on")
 
 
 class UrlManagerDao(MongoClient):

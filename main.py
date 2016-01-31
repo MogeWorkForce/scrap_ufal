@@ -25,7 +25,7 @@ logger.addHandler(file_handler)
 if __name__ == '__main__':
     executors = {
         'default': ThreadPoolExecutor(10),
-        'processpool': ProcessPoolExecutor(5)
+        'processpool': ProcessPoolExecutor(5),
     }
 
     job_defaults = {
@@ -75,7 +75,8 @@ if __name__ == '__main__':
         #sys.exit(1)
 
     scheduler.add_job(url_on_queue, trigger='interval', seconds=12)
-    scheduler.add_job(url_on_fallback, trigger='interval', seconds=15)
+    scheduler.add_job(url_on_queue, trigger='interval', seconds=26)
+    scheduler.add_job(url_on_fallback, trigger='interval', seconds=18)
     scheduler.start()
 
     try:
