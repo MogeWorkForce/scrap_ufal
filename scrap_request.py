@@ -1,46 +1,27 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
-from data_model.to import TO
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
+from data_model.dao.mongodb import DocumentsDao
 import requests
 import re
 import time
 import logging
-import helper
 import json
 import sys
 import traceback
 import argparse
+from datetime import date
 
-formatter = logging.Formatter(
-    "[%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
+logger = logging.getLogger("Scrap_Ufal.scraper")
 level_debug = logging.DEBUG
 logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-parser = argparse.ArgumentParser(description="Set a Url to crawler")
-parser.add_argument('-u', '--url', type=str,
-                    help="Url to search notas_empenhos")
-
-args = parser.parse_args()
-if not args.url:
-    raise Exception("Url not passed, please set a url in arguments")
-
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
                        r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>[a-zA-Z0-9]*)'
                        r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
-get_paginator = re.compile(r'<span class="paginaXdeN">.*(?P<inicio>\d{1,3}?)'
-                           r'.*(?P<fim>\d{1,3})</span>')
+get_paginator = re.compile(r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
 links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
 match_content = re.compile(
@@ -58,22 +39,14 @@ match_tr = re.compile(
 
 match_tr_subtable = re.compile(r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
 
-client = MongoClient()
-db = client.notas_empenho
-collect = db.documents
+client = DocumentsDao()
 
 start_ = time.time()
 
+
 def save_or_update(doc):
-    try:
-        key = {"_id": doc['dados_basicos']['documento'][0]}
-        result = collect.replace_one(key,doc,upsert=True)
-    except DuplicateKeyError as e:
-        print e
-        logger.debug("move on - DuplaceteKey")
-    except KeyError as e:
-        traceback.print_exc()
-        logger.debug("move on")
+    client.insert_document(doc, upsert=True)
+
 
 def try_numeric(value):
     try:
@@ -82,6 +55,7 @@ def try_numeric(value):
     except:
         pass
     return value
+
 
 def _normalize_text(txt, codif='utf-8'):
     if isinstance(txt, str):
@@ -92,6 +66,7 @@ def _normalize_text(txt, codif='utf-8'):
         replace("(","").\
         replace(")","").\
         replace("$", "s").lower()
+
 
 def get_general_data(url, data=None):
     if not data:
@@ -104,13 +79,25 @@ def get_general_data(url, data=None):
         data['geral_data']['type_doc'] = dt.group("type_doc")
         data['geral_data']['num_doc'] = dt.group("num_doc")
         data['geral_data']['session'] = dt.group("session")
-
-    print base_data.findall(url)[0]
     
     data['geral_data']['url'] = url
     return data
 
+
+#TODO: pessimo nome, mudar isso depois
+def cleaned_content(url, visited_links):
+    time.sleep(3.8)
+    logger.debug((len(visited_links), url))
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+    }
+    result = requests.get(url, timeout=10, headers=headers)
+    visited_links.append(url)
+
+    no_spaces = clean_result(result)
+    return no_spaces
     
+
 def get_content_page(url, visited_links=None, data=None):
     if not data:
         data = {}
@@ -118,38 +105,24 @@ def get_content_page(url, visited_links=None, data=None):
     if not visited_links:
         visited_links = []
     data = get_general_data(url, data)
-    type_session = base_data.findall(url)[0][2]
-    num_page = base_data.findall(url)[0][-1]
-    num_page = int(num_page) if num_page else 1
     paginator = False
-    if num_page >1:
-        paginator = True
-        
-    try:
-        logger.debug((len(visited_links), url))
-        time.sleep(0.5)
-        result = requests.get(url, timeout=10)
-    except:
-        #page = 'page%s.html' % base_data.findall(url)[0][-1]
 
-        #if type_session == 'liquidacao':
-        #    page = 'liquidacao.html'
-        #print page
-        #result = helper.Reader(page)
-        return data
-        
-    no_spaces = clean_result(result)
+    result = cleaned_content(url, visited_links)
+
+    no_spaces = result
     data = load_content(no_spaces, paginator, data, visited_links)
     return data
 
-def load_content(content, paginator=False, data=None, visited_links=None):
+
+def load_content(content_original, paginator=False, data=None, visited_links=None):
     if not visited_links:
         visited_links = []
         
-    table_content = match.findall(content)
-    adjust_headers = []
-    subtable = match_subtable.findall(content)
+    table_content = match.findall(content_original)
+    subtable = match_subtable.findall(content_original)
     content_subtable = []
+
+    docs_relacionados = []
     for i, subtable in enumerate(subtable):
         content_ = {}
         subtable_headers = []
@@ -204,8 +177,6 @@ def load_content(content, paginator=False, data=None, visited_links=None):
             last_key_tr = ''
             last_key_th = ''
             sub_head = []
-            counter_sub_head = 1
-            title = True
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
                 if class_tr in ('cabecalho', 'titulo'):
@@ -215,12 +186,10 @@ def load_content(content, paginator=False, data=None, visited_links=None):
                     if paginator:
                         continue
                     if class_tr == 'titulo':
-                        title = True
                         data[head[-1]] = {}
                         continue
                     else:
                         data[head[0]][head[-1]] = {}
-                        title = False
                         continue
 
                 class_content = content_row.group('class')
@@ -271,60 +240,116 @@ def load_content(content, paginator=False, data=None, visited_links=None):
 
                 link_document = content_row.group('link_document')
                 if link_document:
-                    new_url = data_doc['geral_data']['url_base']+'/'+data_doc['geral_data']['session']+'/'+link_document
+                    new_url = data['geral_data']['url_base']+'/'+data['geral_data']['session']+'/'+link_document
                     if new_url not in visited_links:
-                        visited_links.append(new_url)
-                        #TODO: Save content in another document
-                        new_doc = get_content_page(url=new_url, visited_links=visited_links)
-                        save_or_update(new_doc)
-                #values_debug = [content_value, class_content, link_document]
-                #values_debug = [temp for temp in values_debug if temp]
-                #logger.debug(values_debug)
-                #logger.debug("tr "+last_key_tr)
-                #logger.debug("th "+last_key_th)
-            #print i, j, head, sub_head, rotulo
-    #logger.warning(json.dumps(data, indent=2))
+                        docs_relacionados.append(new_url)
+    
+    if not paginator:
+        paginas = get_paginator.findall(content_original)
+        end_link_paginator = '&pagina=%s#paginacao'
+        for pg in paginas[:1]:
+            _, end = pg
+            for next_pg in xrange(1, int(end)+1):
+                url_ = data['geral_data']['url_base']+'/'+data['geral_data']['session']+"/"
+                url_ += data['geral_data']['type_doc']+'?documento='+data['geral_data']['num_doc']
+                if next_pg == 1:
+                    link_ = url_
+                else:
+                    link_ = url_+end_link_paginator % next_pg
+
+                if link_ not in visited_links:
+                    result = cleaned_content(link_, visited_links)
+                    no_spaces = result
+                    data = load_content(no_spaces, True, data, visited_links)
+
+    if not paginator:
+        save_or_update(data)
+        
+    client._url.set_chunk_url(docs_relacionados)
+
     return data
+
 
 def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=153037152222015NE800115'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/liquidacao?documento=153037152222015NS008591'
-#url = 'http://www.portaltransparencia.gov.br/despesasdiarias/empenho?documento=791800000012016NE000001'
 
-url = args.url
+def load_url_from_queue(batch=1, collection='queue'):
+    try:
+        import random
+        logger.debug('----- start new job! (%s) Batches: %s' % (collection.upper(), batch))
+        date_ = date.today()
+        key = {"_id": date_.strftime("%d/%m/%Y")}
+        urls_load = client._url.db_urls[collection].find_one(key)
 
-data_doc = {'geral_data': {}}
-data_doc = get_general_data(url, data_doc)
-print data_doc
+        length_urls = len(urls_load['urls'])
 
-try:
-    result = requests.get(url, timeout=10)
-    data_doc['geral_data']['estatico'] = False
-    data_doc['geral_data']['url'] = url
-except:
-    raise Exception("Request fail")
+        if length_urls <= 0:
+            logger.warning("(%s) Finish the Process all Urls" % collection.upper())
+            return
+        elif length_urls == 1:
+            init_ = 0
+        else:
+            init_ = random.randint(0, length_urls+1)
+        
+        logger.debug("(%s) Interval %s to %s" % (collection.upper(), init_, init_+batch))
+        tmp_urls_load = urls_load['urls'][init_:init_+batch]
 
-visited_link = [url]
-no_spaces = clean_result(result)
-load_content(no_spaces, data=data_doc, visited_links=visited_link)
+        visited_link = []
+        for url in tmp_urls_load:
+            try:
+                in_ = client._url.verify_today_urls(url)
 
-paginator = get_paginator.findall(no_spaces)
-end_link_paginator = '&pagina=%s#paginacao'
-for pg in paginator:
-    end, init = pg
-    for next_pg in xrange(int(init)+1, int(end)+1):
-        link_ = url+end_link_paginator % next_pg
-        logger.debug(link_)
-        if link_ not in visited_link:
-            data_doc = get_content_page(link_, data=data_doc, visited_links=visited_link)
-            visited_link.append(link_)
+                if not in_:
+                    logger.debug('Start load url_from %s! %s' % (collection.upper(), url))
+                    get_content_page(url, visited_links=visited_link)
+                    client._url.dinamic_url('queue_loaded', url)
+                else:
+                    logger.warning("Url already loaded: %s" % url)
+            except:
+                traceback.print_exc()
+                client._url.dinamic_url('fallback', url)
+                logger.warning("Call Fallback to Url: %s" % url)
 
-print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
-print 'links visitados: ', len(visited_link)
+        try:
+            client._url.remove_urls(tmp_urls_load, collection=collection)
+            logger.debug('(%s)Pass to remove_urls! Batches: %d' %(collection.upper(), batch))
+        except Exception as e:
+            traceback.print_exc()
+            logger.warning("Error on remove urls")
+            
+    except:
+        traceback.print_exc()
+        logger.debug('Errors on %s!' % collection.upper())
+        return
 
-save_or_update(data_doc)
 
-print 'finish in: ', time.time() - start_
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Set a Url to crawler")
+    parser.add_argument('-u', '--url', type=str,
+                        help="Url to search notas_empenhos")
+
+    parser.add_argument('-b', '--batch', type=int, choices=range(1, 21),
+                        help="How many urls will be loaded inside the queue")
+
+
+    args = parser.parse_args()
+    if not args.url:
+        raise Exception("Url not passed, please set a url in arguments")
+    
+    url = args.url
+
+    data_doc = {}
+    visited_link = [url]
+
+    load_url_from_queue(batch=15)
+
+    # data_doc = get_content_page(url, visited_links=visited_link)
+    #
+    # print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
+    # print 'links visitados: ', len(visited_link)
+
+    #save_or_update(data_doc)
+
+    print 'finish in: ', time.time() - start_
 

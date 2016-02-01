@@ -15,8 +15,8 @@ Para conseguir rodar o script, efetuar o seguinte comando, com python (2.7.X) in
 
 
 3 - Ativando a virtualenv (estando no mesmo diretório):
-  - source ./NOME_DA_VIRTUALENV/bin/activate (Unix)
-  - NOME_DA_VIRTUALENV\Scripts\activate
+  - source ./NOME_DA_VIRTUALENV/bin/activate (Unix e Mac)
+  - NOME_DA_VIRTUALENV\Scripts\activate (Windows)
   
 4 - pip install -r requeriments.txt
 
@@ -28,10 +28,19 @@ Se tiver problemas de como trabalhar com virtualenvs no Windows, recomendo ler e
   * Captura dos documentos relacionados, apenas printando o resultado no momento.
   * Gerar um Json resultante.
   * Evitar um loop infinito ao acessar um documento relacionado.
-
-7 - Próximos passos:
   * Persistência dos dados, gerar uma interface de conexão ao Banco de Dados.
-  * Decidir qual o banco de dados será utilizado (inicialmente MongoDB está nos planos).
-  * Interface para introduzir "Regras".
+  * Banco de Dados, inicialmente MongoDB.
   * Paralelizar a captura dos dados (aplicada aos Documentos Relacionados).
   * Engenharia reversa (dada uma Nota de Liquidação/Pagamento ou Empenho (espécie: Reforço)) capturar todos os dados gerando o conteúdo da Nota de Empenho Original.
+
+7 - Próximos passos:
+  * Interface para introduzir "Regras".
+  * Interface Web:
+    * Introduzir novas Urls
+    * Visualizar quantas Urls foram processadas nos últimos 7 dias (fallback ou principal).
+    * Consulta de Documentos em específico.
+
+8 - Como rodar:
+  * python main.py -u "URL" -b BATCH
+    * URL: Url que irá ser processada, salvando o documento e abrindo espaço para o processamento de novas Urls (vindas dos Documentos Relacionados), enfileirando numa queue.
+    * BATCH: Número entre 1 à 20, será a quantidade de URLs vindas das queues e fallback para serem processadas.
