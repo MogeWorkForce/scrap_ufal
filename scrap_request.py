@@ -86,7 +86,7 @@ def get_general_data(url, data=None):
 
 #TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links):
-    time.sleep(3.1)
+    time.sleep(3.8)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
@@ -258,14 +258,8 @@ def load_content(content_original, paginator=False, data=None, visited_links=Non
                     link_ = url_+end_link_paginator % next_pg
 
                 if link_ not in visited_links:
-                    try:
-                        result = cleaned_content(link_, visited_links)
-                    except Exception as e:
-                        print str(e)
-                        continue
-            
+                    result = cleaned_content(link_, visited_links)
                     no_spaces = result
-                    
                     data = load_content(no_spaces, True, data, visited_links)
 
     if not paginator:
@@ -291,22 +285,15 @@ def load_url_from_queue(batch=1, collection='queue'):
         length_urls = len(urls_load['urls'])
 
         if length_urls <= 0:
-            logger.warning("Finish the Process all Urls")
+            logger.warning("(%s) Finish the Process all Urls" % collection.upper())
             return
         elif length_urls == 1:
             init_ = 0
         else:
             init_ = random.randint(0, length_urls+1)
         
-        logger.debug("Interval %s to %s" % (init_, init_+batch))
+        logger.debug("(%s) Interval %s to %s" % (collection.upper(), init_, init_+batch))
         tmp_urls_load = urls_load['urls'][init_:init_+batch]
-
-        try:
-            client._url.remove_urls(tmp_urls_load, collection=collection)
-            logger.debug(('Pass to remove_urls! Batches: ', batch))
-        except Exception as e:
-            traceback.print_exc()
-            logger.warning("Error on remove urls")
 
         visited_link = []
         for url in tmp_urls_load:
@@ -323,9 +310,17 @@ def load_url_from_queue(batch=1, collection='queue'):
                 traceback.print_exc()
                 client._url.dinamic_url('fallback', url)
                 logger.warning("Call Fallback to Url: %s" % url)
+
+        try:
+            client._url.remove_urls(tmp_urls_load, collection=collection)
+            logger.debug('(%s)Pass to remove_urls! Batches: %d' %(collection.upper(), batch))
+        except Exception as e:
+            traceback.print_exc()
+            logger.warning("Error on remove urls")
+            
     except:
         traceback.print_exc()
-        logger.debug('Errors on %s! To URL: %s' % (collection.upper(), url))
+        logger.debug('Errors on %s!' % collection.upper())
         return
 
 

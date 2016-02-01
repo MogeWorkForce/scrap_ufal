@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     url_on_queue = lambda: load_url_from_queue(int(batch))
     url_on_fallback = lambda: load_url_from_queue(
-            int(batch) if int(batch) <=2 else round(int(batch)/2.0),
+            int(batch) if int(batch) <=2 else int(round(int(batch)/2.0)),
             collection="fallback"
         )
 
@@ -74,14 +74,14 @@ if __name__ == '__main__':
         logger.debug("Error on load content on url passed")
         #sys.exit(1)
 
-    scheduler.add_job(url_on_queue, trigger='interval', seconds=12)
-    scheduler.add_job(url_on_queue, trigger='interval', seconds=26)
-    scheduler.add_job(url_on_fallback, trigger='interval', seconds=18)
+    scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
+    #scheduler.add_job(url_on_queue, trigger='interval', seconds=36)
+    scheduler.add_job(url_on_fallback, trigger='interval', seconds=22)
     scheduler.start()
 
     try:
         while True:
-            time.sleep(1000)
+            time.sleep(30)
 
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()

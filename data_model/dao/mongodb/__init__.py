@@ -22,7 +22,6 @@ class DocumentsDao(MongoClient):
 
     def insert_document(self, doc, upsert=False):
         try:
-            logger.debug(("data to insert: ", doc))
             key = {"_id": doc['dados_basicos']['documento'][0]}
             result = self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
