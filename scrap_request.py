@@ -279,7 +279,7 @@ def load_url_from_queue(batch=1, collection='queue'):
         import random
         logger.debug('----- start new job! (%s) Batches: %s' % (collection.upper(), batch))
         date_ = date.today()
-        key = {"_id": date_.strftime("%d/%m/%Y")}
+        key = {"_id": int(date_.strftime(client._url.PATTERN_PK))}
         urls_load = client._url.db_urls[collection].find_one(key)
 
         length_urls = len(urls_load['urls'])

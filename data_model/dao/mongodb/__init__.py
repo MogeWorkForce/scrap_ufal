@@ -23,6 +23,7 @@ class DocumentsDao(MongoClient):
     def insert_document(self, doc, upsert=False):
         try:
             key = {"_id": doc['dados_basicos']['documento'][0]}
+            doc = self.adapt_docs_relacionados(doc)
             result = self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
             url_ = doc['geral_data']['url_base']+'/'+doc['geral_data']['session']+"/"
@@ -32,10 +33,27 @@ class DocumentsDao(MongoClient):
         except DuplicateKeyError as e:
             print e
             logger.debug("move on - DuplicateKey")
+    def adapt_docs_relacionados(self, doc):
+        tmp_docs = doc["documentos_relacionados"]
+        new_data = [
+            {
+                "data": tmp_docs["data"][i],
+                "unidade_gestora": tmp_docs["unidade_gestora"][i],
+                "orgao_superior": tmp_docs["orgao_superior"][i],
+                "orgao_entidade_vinculada": tmp_docs["orgao_entidade_vinculada"][i],
+                "favorecido": tmp_docs["favorecido"][i],
+                "fase": tmp_docs["fase"][i],
+                "especie": tmp_docs["especie"][i],
+                "elemento_de_despesa": tmp_docs["elemento_de_despesa"][i],
+                "documento": tmp_docs["documento"][i],
+            } for i in xrange(len(tmp_docs["fase"]))
+        ]
+        doc["documentos_relacionados"] = new_data
+        return doc
 
 
 class UrlManagerDao(MongoClient):
-
+    PATTERN_PK = '%Y%m%d'
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
         self.db_urls = self.urls
@@ -44,7 +62,7 @@ class UrlManagerDao(MongoClient):
 
     def set_chunk_url(self, list_url):
         date_ = date.today()
-        key = {"_id": date_.strftime("%d/%m/%Y")}
+        key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
             "$addToSet": {
                 "urls": {"$each": list_url}
@@ -69,7 +87,7 @@ class UrlManagerDao(MongoClient):
 
     def dinamic_url(self, collection, url):
         date_ = date.today()
-        key = {"_id": date_.strftime("%d/%m/%Y")}
+        key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
             "$addToSet": {
                 "urls": url
@@ -93,7 +111,7 @@ class UrlManagerDao(MongoClient):
 
     def remove_urls(self, list_urls, collection='queue'):
         date_ = date.today()
-        key = {"_id": date_.strftime("%d/%m/%Y")}
+        key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
             "$pullAll": {
                 "urls": list_urls
@@ -105,7 +123,7 @@ class UrlManagerDao(MongoClient):
     def verify_today_urls(self, url, collection='queue_loaded'):
         date_ = date.today()
         params = {
-            "_id": date_.strftime("%d/%m/%Y"),
+            "_id": int(date_.strftime(self.PATTERN_PK)),
             "urls": {"$in": [url]}
         }
 
