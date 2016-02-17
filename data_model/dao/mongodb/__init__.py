@@ -35,7 +35,7 @@ class DocumentsDao(MongoClient):
             logger.debug("move on - DuplicateKey")
     def adapt_docs_relacionados(self, doc):
         tmp_docs = doc["documentos_relacionados"]
-        new_data = [
+        doc["documentos_relacionados"] = [
             {
                 "data": tmp_docs["data"][i],
                 "unidade_gestora": tmp_docs["unidade_gestora"][i],
@@ -46,9 +46,9 @@ class DocumentsDao(MongoClient):
                 "especie": tmp_docs["especie"][i],
                 "elemento_de_despesa": tmp_docs["elemento_de_despesa"][i],
                 "documento": tmp_docs["documento"][i],
+                "valor_rs": float(tmp_docs["valor_rs"][i]) if tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
         ]
-        doc["documentos_relacionados"] = new_data
         return doc
 
 
@@ -130,3 +130,33 @@ class UrlManagerDao(MongoClient):
         result = self.db_urls[collection].find(params)
         return bool(list(result))
 
+
+def avaiable_aggregation(d):
+    import time
+    start = time.time()
+    i = 0
+    for result in d.documents.find():
+        result["documentos_relacionados"] = [{
+                        "data": tmp_docs["data"],
+                        "unidade_gestora": tmp_docs["unidade_gestora"],
+                        "orgao_superior": tmp_docs["orgao_superior"],
+                        "orgao_entidade_vinculada": tmp_docs["orgao_entidade_vinculada"],
+                        "favorecido": tmp_docs["favorecido"],
+                        "fase": tmp_docs["fase"],
+                        "especie": tmp_docs["especie"],
+                        "elemento_de_despesa": tmp_docs["elemento_de_despesa"],
+                        "documento": tmp_docs["documento"],
+                        "valor_rs": float(tmp_docs["valor_rs"]) if tmp_docs["valor_rs"] else 0.00,
+                    } for tmp_docs in result["documentos_relacionados"] if tmp_docs['fase'] == "Pagamento"]
+        i+=1
+    end = time.time()
+    print "consumed", i, 'documents'
+    #print "Took: ", end - start, "ms"
+    #print "Start: ", start, "\n  End: ",end
+    #return result
+
+'''
+var timerIt = function(){    
+    var start = (new Date()).getTime();     
+    var result = db.documents.aggregate({"$match": {"_id": "2015NE800115"}}, {"$unwind": "$documentos_relacionados"}, {"$match": {"documentos_relacionados.fase": "Liquidação"}}, {"$group": {"_id": "$_id", "documentos_relacionados": {"$push": "$documentos_relacionados"}}});     var end = (new Date()).getTime(); print("Took: "+ (end - start));    print("Start: "+start+"\nEnd: "+end); return result; };
+    '''

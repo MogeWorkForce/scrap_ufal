@@ -86,7 +86,7 @@ def get_general_data(url, data=None):
 
 #TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links):
-    time.sleep(3.8)
+    time.sleep(3.1)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
@@ -342,9 +342,10 @@ if __name__ == '__main__':
     data_doc = {}
     visited_link = [url]
 
-    load_url_from_queue(batch=15)
+    # load_url_from_queue(batch=15)
 
     # data_doc = get_content_page(url, visited_links=visited_link)
+    # print data_doc
     #
     # print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
     # print 'links visitados: ', len(visited_link)
