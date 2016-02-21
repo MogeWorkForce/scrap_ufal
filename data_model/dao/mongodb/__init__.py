@@ -131,23 +131,25 @@ class UrlManagerDao(MongoClient):
         return bool(list(result))
 
 
-def avaiable_aggregation(d):
+def avaiable_aggregation(d, type_fase):
     import time
     start = time.time()
     i = 0
     for result in d.documents.find():
-        result["documentos_relacionados"] = [{
-                        "data": tmp_docs["data"],
-                        "unidade_gestora": tmp_docs["unidade_gestora"],
-                        "orgao_superior": tmp_docs["orgao_superior"],
-                        "orgao_entidade_vinculada": tmp_docs["orgao_entidade_vinculada"],
-                        "favorecido": tmp_docs["favorecido"],
-                        "fase": tmp_docs["fase"],
-                        "especie": tmp_docs["especie"],
-                        "elemento_de_despesa": tmp_docs["elemento_de_despesa"],
-                        "documento": tmp_docs["documento"],
-                        "valor_rs": float(tmp_docs["valor_rs"]) if tmp_docs["valor_rs"] else 0.00,
-                    } for tmp_docs in result["documentos_relacionados"] if tmp_docs['fase'] == "Pagamento"]
+        result["documentos_relacionados"] = [
+            {
+                "data": tmp_docs["data"],
+                "unidade_gestora": tmp_docs["unidade_gestora"],
+                "orgao_superior": tmp_docs["orgao_superior"],
+                "orgao_entidade_vinculada": tmp_docs["orgao_entidade_vinculada"],
+                "favorecido": tmp_docs["favorecido"],
+                "fase": tmp_docs["fase"],
+                "especie": tmp_docs["especie"],
+                "elemento_de_despesa": tmp_docs["elemento_de_despesa"],
+                "documento": tmp_docs["documento"],
+                "valor_rs": float(tmp_docs["valor_rs"]) if tmp_docs["valor_rs"] else 0.00,
+            } for tmp_docs in result["documentos_relacionados"] if tmp_docs['fase'] == type_fase
+        ]
         i+=1
     end = time.time()
     print "consumed", i, 'documents'
@@ -158,5 +160,14 @@ def avaiable_aggregation(d):
 '''
 var timerIt = function(){    
     var start = (new Date()).getTime();     
-    var result = db.documents.aggregate({"$match": {"_id": "2015NE800115"}}, {"$unwind": "$documentos_relacionados"}, {"$match": {"documentos_relacionados.fase": "Liquidação"}}, {"$group": {"_id": "$_id", "documentos_relacionados": {"$push": "$documentos_relacionados"}}});     var end = (new Date()).getTime(); print("Took: "+ (end - start));    print("Start: "+start+"\nEnd: "+end); return result; };
-    '''
+    var result = db.documents.aggregate(
+        {"$match": {"_id": "2015NE800115"}}, 
+        {"$unwind": "$documentos_relacionados"}, 
+        {"$match": {"documentos_relacionados.fase": "Liquidação"}}, 
+        {"$group": {"_id": "$_id", "documentos_relacionados": {"$push": "$documentos_relacionados"}}}
+    );     
+    var end = (new Date()).getTime(); 
+    print("Took: "+ (end - start));    
+    print("Start: "+start+"\nEnd: "+end); return result; };
+
+'''
