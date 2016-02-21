@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+from data_model.dao.mongodb import UrlManagerDao
 import requests
 from datetime import date, timedelta
 import argparse
 import logging
 import re
 
+client = UrlManagerDao()
+
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
-
+get_paginator = re.compile(r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
@@ -23,19 +26,6 @@ logger.addHandler(file_handler)
 
 log_proactive = logging.getLogger("Scrap_Ufal.pro_active")
 log_proactive.setLevel(level_debug)
-
-'''
-periodoInicio
-periodoFim
-fase
-codigoOS
-codigoOrgao
-codigoUG
-codigoED
-codigoFavorecido
-consulta
-'''
-
 
 fmt_data = "%d/%m/%Y"
 
@@ -53,16 +43,14 @@ def main(date_start=None, before=False, time_elapse=1):
     if not date_start:
         date_start = date.today()
 
-    datas = [date_start.strftime(fmt_data), (
-            date_start-elapse if not before else date_start+elapse
-        ).strftime(fmt_data)
-    ]
+    datas = [date_start, date_start-elapse if not before else date_start+elapse]
 
     datas.sort()
+    print datas
 
     params = {
-        "periodoInicio": datas[1],
-        "periodoFim": datas[0],
+        "periodoInicio": datas[0].strftime(fmt_data),
+        "periodoFim": datas[1].strftime(fmt_data),
         "fase": "PAG",
         "codigoOS": 26000,
         "codigoOrgao": 26231,
@@ -80,8 +68,29 @@ def main(date_start=None, before=False, time_elapse=1):
         links = link_match.findall(content)
         all_links.extend(links)
 
+    _url_pg = result.url
+    paginas = get_paginator.findall(clean_result(result))
+    end_link_paginator = '&pagina=%s#paginacao'
+
+    for pg in paginas[:1]:
+        _, end = pg
+        for next_pg in xrange(1, int(end)+1):
+            if next_pg == 1:
+                continue
+            else:
+                link_ = _url_pg+end_link_paginator % next_pg
+
+            result = requests.get(link_)
+            tables = match.findall(clean_result(result))
+            print '-------------------', len(tables)
+            for content in tables:
+                links = link_match.findall(content)
+                all_links.extend(links)
+
     all_links = [url_base+item for item in all_links]
     print all_links
+
+    client.set_chunk_url(all_links)
     print result.url
 
 if __name__ == "__main__":
