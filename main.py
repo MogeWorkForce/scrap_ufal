@@ -21,7 +21,6 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 
-
 if __name__ == '__main__':
     executors = {
         'default': ThreadPoolExecutor(10),
@@ -30,19 +29,20 @@ if __name__ == '__main__':
 
     job_defaults = {
         'coalesce': False,
-        'max_instances': 2
+        'max_instances': 3
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
     logScheduller.setLevel(logging.DEBUG)
 
-    scheduler = BackgroundScheduler(logger=logScheduller, executors=executors, job_defaults=job_defaults)
-    #scheduler._logger.setLevel(logging.WARNING)
+    scheduler = BackgroundScheduler(
+        logger=logScheduller, executors=executors, job_defaults=job_defaults)
+    # scheduler._logger.setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
 
-    parser.add_argument('-b', '--batch', type=int, choices=range(1, 21),
+    parser.add_argument('-b', '--batch', type=int, choices=range(1, 31),
                         help="How many urls will be loaded inside the queue")
 
     parser.add_argument('-i', '--ignore', action="store_true",
@@ -54,25 +54,25 @@ if __name__ == '__main__':
             raise Exception("Url not passed, please set a url in arguments")
     else:
         logger.warning("Start ignoring url passed on parameter")
-        
+
     url = args.url
     batch = args.batch
 
     url_on_queue = lambda: load_url_from_queue(int(batch))
     url_on_fallback = lambda: load_url_from_queue(
-            int(batch) if int(batch) <=2 else int(round(int(batch)/2.0)),
-            collection="fallback"
-        )
+        int(batch) if int(batch) <= 2 else int(round(int(batch)/2.0)),
+        collection="fallback"
+    )
 
     try:
         if not args.ignore:
             visited_links = [url]
             get_content_page(url, visited_links=visited_links)
-        #url_on_queue()
+        # url_on_queue()
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
-        #sys.exit(1)
+        # sys.exit(1)
 
     scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
     #scheduler.add_job(url_on_queue, trigger='interval', seconds=36)

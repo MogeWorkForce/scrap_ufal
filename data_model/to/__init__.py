@@ -32,10 +32,14 @@ class TO(object):
         return attr in self.__dict__
 
     def to_json(self):
+        return json.dumps(self.to_dict())
+
+    def to_dict(self):
         tmp = {}
         for key, item in self.__dict__.iteritems():
             tmp[key] = recursive_acces(key, item)
-        return json.dumps(tmp)
+        return tmp
+        
 
     def pop(self, attr):
         return self.__dict__.pop(str(attr))
