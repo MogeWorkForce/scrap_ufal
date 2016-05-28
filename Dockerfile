@@ -9,8 +9,9 @@ RUN apt-get install -y python2.7 \
 RUN apt-get autoremove -y && apt-get clean all
 RUN pip install -U pip setuptools
 
-#ENV MODE=DOCKER
 COPY . /
+#ENV MODE=DOCKER
+
 RUN chmod +x *.sh
 RUN pip install -r requeriments.txt
 
