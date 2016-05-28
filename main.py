@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     job_defaults = {
         'coalesce': False,
-        'max_instances': 2
+        'max_instances': 3
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
 
-    parser.add_argument('-b', '--batch', type=int, choices=range(1, 21),
+    parser.add_argument('-b', '--batch', type=int, choices=range(1, 31),
                         help="How many urls will be loaded inside the queue")
 
     parser.add_argument('-i', '--ignore', action="store_true",

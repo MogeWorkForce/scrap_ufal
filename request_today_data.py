@@ -6,8 +6,16 @@ from datetime import date, timedelta
 import argparse
 import logging
 import re
+import os
 
-client = UrlManagerDao()
+MODE = os.environ.get('MODE', 'DEV')
+
+if MODE == 'DEV':
+   client = UrlManagerDao()
+elif MODE == "DOCKER":
+    client = UrlManagerDao(host='172.17.0.1')
+else:
+    client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
@@ -66,7 +74,8 @@ def main(date_start=None, before=False, time_elapse=1):
     print '-------------------', len(tables)
     for content in tables:
         links = link_match.findall(content)
-        all_links.extend(links)
+        links = [url_base+item for item in links]
+        client.set_chunk_url(links)
 
     _url_pg = result.url
     paginas = get_paginator.findall(clean_result(result))
@@ -85,12 +94,9 @@ def main(date_start=None, before=False, time_elapse=1):
             print '-------------------', len(tables)
             for content in tables:
                 links = link_match.findall(content)
-                all_links.extend(links)
+                links = [url_base+item for item in links]
+                client.set_chunk_url(links)
 
-    all_links = [url_base+item for item in all_links]
-    print all_links
-
-    client.set_chunk_url(all_links)
     print result.url
 
 if __name__ == "__main__":

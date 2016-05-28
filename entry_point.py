@@ -13,6 +13,7 @@ import functools
 import base64
 import time
 import traceback
+import os
 
 __author__ = 'hermogenes'
 
@@ -36,7 +37,14 @@ app.patch = functools.partial(app.route, method='PATCH')
 APP_NAME = "scrapufal"
 VERSION = "v1"
 
-client = UrlManagerDao()
+MODE = os.environ.get('MODE', 'DEV')
+
+if MODE == 'DEV':
+   client = UrlManagerDao()
+elif MODE == "DOCKER":
+    client = UrlManagerDao(host='172.17.0.1')
+else:
+    client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 @app.put(NAME_VERSION+"urls")
