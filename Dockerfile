@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
     apt-get install -y python2.7 \
-        python-pip \
+        python-pip
 
 RUN apt-get autoremove -y && apt-get clean all
 RUN pip install -U pip setuptools
