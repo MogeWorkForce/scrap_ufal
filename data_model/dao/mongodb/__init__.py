@@ -13,13 +13,13 @@ MODE = os.environ.get('MODE', 'DEV')
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
 logger.setLevel(logging.DEBUG)
 
-print '\n\n'
-print '-' * 30
-print 'MONGO_URI:', os.environ.get('MONGODB_ADDON_DB')
-print 'MONGO_DB', os.environ.get('MONGODB_ADDON_URI')
+logger.debug('\n\n')
+logger.debug('-' * 30)
+logger.debug('MONGO_URI:', os.environ.get('MONGODB_ADDON_DB'))
+logger.debug('MONGO_DB', os.environ.get('MONGODB_ADDON_URI'))
 
-print '\n\n'
-print '-' * 30
+logger.debug('\n\n')
+logger.debug('-' * 30)
 
 
 class DocumentsDao(MongoClient):
