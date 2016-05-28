@@ -19,7 +19,9 @@ class DocumentsDao(MongoClient):
 
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
-        self.db_empenho = self.notas_empenho if MODE == 'DEV' else self[os.environ['MONGODB_ADDON_DB']]
+        self.db_empenho = self.notas_empenho if MODE not in ['DEV', "DOCKER"] else self[
+                                                                            os.environ.get('MONGODB_ADDON_DB', 'notas_empenho')
+                                                                            ]
         self.documents = self.db_empenho.documents
         self._url = UrlManagerDao(*args, **kwargs)
 
@@ -59,7 +61,9 @@ class UrlManagerDao(MongoClient):
     PATTERN_PK = '%Y%m%d'
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
-        self.db_urls = self.urls if MODE == 'DEV' else self[os.environ['MONGODB_ADDON_DB']]
+        self.db_urls = self.urls if MODE not in ['DEV', "DOCKER"] else self[
+                                                                        os.environ.get('MONGODB_ADDON_DB', 'urls')
+                                                                    ]
         self.queue = self.db_urls.queue
         self.fallback = self.db_urls.fallback
 

@@ -46,7 +46,7 @@ MODE = os.environ.get('MODE', 'DEV')
 if MODE == 'DEV':
    client = DocumentsDao()
 elif MODE == "DOCKER":
-    client = UrlManagerDao(host='172.17.0.1')
+    client = DocumentsDao(host='172.17.0.1')
 else:
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
 
