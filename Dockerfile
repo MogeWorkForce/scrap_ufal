@@ -13,7 +13,7 @@ COPY . /
 #ENV MODE=DOCKER
 
 RUN chmod +x *.sh
-RUN pip install -r requeriments.txt
+RUN pip install -r requeriments.txt > pip.log
 
 EXPOSE 8080
 ENTRYPOINT ["bash", "run.sh"]
