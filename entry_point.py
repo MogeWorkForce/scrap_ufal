@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from bottle import Bottle, run, request, response
+from bottle import Bottle, run, request
 from gevent import monkey, queue; monkey.patch_all()
 from data_model.dao.mongodb import UrlManagerDao
-from gevent.pywsgi import WSGIServer
 from datetime import date
 import os
-import json
 import logging
 import functools
 import traceback
@@ -43,6 +41,8 @@ else:
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
+
+
 @app.put(NAME_VERSION+"urls")
 def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
@@ -86,12 +86,26 @@ def status_enqueue(collection):
     }
 
 
-def run_app():
+@app.get("/")
+def home():
+    key = {"_id": date.today().strftime("%Y%m%d")}
+    try:
+        result = client.db_urls['queue'].find_one(key)
+    except:
+        traceback.print_exc()
+        result = {"urls": []}
+    return result
 
-    run(app, host='localhost', port=9000, debug=True, reloader=True, server='gevent')
-    #run(app, host='localhost', port=9000, debug=True, reloader=True)
-    #server = WSGIServer(('localhost', 9000), app)
-    #server.serve_forever()
+
+def run_app():
+    run(
+        app,
+        host='localhost',
+        port=8080,
+        debug=True,
+        reloader=True,
+        server='gevent'
+    )
 
 if __name__ == '__main__':
     run_app()

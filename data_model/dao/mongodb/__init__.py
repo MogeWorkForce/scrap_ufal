@@ -12,8 +12,8 @@ MODE = os.environ.get('MODE', 'DEV')
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
 logger.setLevel(logging.DEBUG)
 
-uri_url = 'MONGO_URI: '+os.environ.get('MONGODB_ADDON_DB', '')
-mongo_db = 'MONGO_DB: '+os.environ.get('MONGODB_ADDON_URI', '')
+uri_url = 'MONGO_URI: ' + os.environ.get('MONGODB_ADDON_DB', '')
+mongo_db = 'MONGO_DB: ' + os.environ.get('MONGODB_ADDON_URI', '')
 logger.debug('\n\n')
 logger.debug('-' * 30)
 logger.debug(uri_url)
@@ -24,14 +24,12 @@ logger.debug('-' * 30)
 
 
 class DocumentsDao(MongoClient):
-
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
-        self.db_empenho = self.notas_empenho if MODE in ['DEV', "DOCKER"] else self[
-                                                                            os.environ.get('MONGODB_ADDON_DB')
-                                                                            ]
+        self.db_empenho = self.notas_empenho if MODE in ['DEV', "DOCKER"] else \
+            self[os.environ.get('MONGODB_ADDON_DB')]
         self.documents = self.db_empenho.documents
-        self._url = UrlManagerDao(*args, **kwargs)
+        self.url = UrlManagerDao(*args, **kwargs)
 
     def insert_document(self, doc, upsert=False):
         try:
@@ -39,9 +37,11 @@ class DocumentsDao(MongoClient):
             doc = self.adapt_docs_relacionados(doc)
             self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
-            url_ = doc['geral_data']['url_base']+'/'+doc['geral_data']['session']+"/"
-            url_ += doc['geral_data']['type_doc']+'?documento='+doc['geral_data']['num_doc']
-            self._url.dinamic_url('queue', url_)
+            url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
+                'session'] + "/"
+            url_ += doc['geral_data']['type_doc'] + '?documento=' + \
+                    doc['geral_data']['num_doc']
+            self.url.dinamic_url('queue', url_)
 
         except DuplicateKeyError as e:
             print e
@@ -54,13 +54,15 @@ class DocumentsDao(MongoClient):
                 "data": tmp_docs["data"][i],
                 "unidade_gestora": tmp_docs["unidade_gestora"][i],
                 "orgao_superior": tmp_docs["orgao_superior"][i],
-                "orgao_entidade_vinculada": tmp_docs["orgao_entidade_vinculada"][i],
+                "orgao_entidade_vinculada":
+                    tmp_docs["orgao_entidade_vinculada"][i],
                 "favorecido": tmp_docs["favorecido"][i],
                 "fase": tmp_docs["fase"][i],
                 "especie": tmp_docs["especie"][i],
                 "elemento_de_despesa": tmp_docs["elemento_de_despesa"][i],
                 "documento": tmp_docs["documento"][i],
-                "valor_rs": float(tmp_docs["valor_rs"][i]) if tmp_docs["valor_rs"][i] else 0.00,
+                "valor_rs": float(tmp_docs["valor_rs"][i]) if
+                tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
         ]
         return doc
@@ -68,11 +70,12 @@ class DocumentsDao(MongoClient):
 
 class UrlManagerDao(MongoClient):
     PATTERN_PK = '%Y%m%d'
+
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
         self.db_urls = self.urls if MODE in ['DEV', "DOCKER"] else self[
-                                                                        os.environ.get('MONGODB_ADDON_DB')
-                                                                    ]
+            os.environ.get('MONGODB_ADDON_DB')
+        ]
         self.queue = self.db_urls.queue
         self.fallback = self.db_urls.fallback
 

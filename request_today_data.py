@@ -10,7 +10,7 @@ import os
 MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
-   client = UrlManagerDao()
+    client = UrlManagerDao()
 elif MODE == "DOCKER":
     client = UrlManagerDao(host='172.17.0.1')
 else:
@@ -18,7 +18,8 @@ else:
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
-get_paginator = re.compile(r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
+get_paginator = re.compile(
+    r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
@@ -36,20 +37,23 @@ log_proactive.setLevel(level_debug)
 
 fmt_data = "%d/%m/%Y"
 
+
 def clean_result(result):
-    return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
+    return result.text.replace('\n', '').replace(
+        '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
 def main(date_start=None, before=False, time_elapse=15):
     url_base = "http://portaltransparencia.gov.br/despesasdiarias/"
-    url = url_base+"resultado"
+    url = url_base + "resultado"
 
     elapse = timedelta(days=time_elapse)
 
     if not date_start:
         date_start = date.today()
 
-    datas = [date_start, date_start-elapse if not before else date_start+elapse]
+    datas = [date_start,
+             date_start - elapse if not before else date_start + elapse]
 
     datas.sort()
     print datas
@@ -67,12 +71,10 @@ def main(date_start=None, before=False, time_elapse=15):
     }
 
     result = requests.get(url, params=params)
-    all_links = []
     tables = match.findall(clean_result(result))
-    print '-------------------', len(tables)
     for content in tables:
         links = link_match.findall(content)
-        links = [url_base+item for item in links]
+        links = [url_base + item for item in links]
         client.set_chunk_url(links)
 
     _url_pg = result.url
@@ -81,21 +83,21 @@ def main(date_start=None, before=False, time_elapse=15):
 
     for pg in paginas[:1]:
         _, end = pg
-        for next_pg in xrange(1, int(end)+1):
+        for next_pg in xrange(1, int(end) + 1):
             if next_pg == 1:
                 continue
             else:
-                link_ = _url_pg+end_link_paginator % next_pg
+                link_ = _url_pg + end_link_paginator % next_pg
 
             result = requests.get(link_)
             tables = match.findall(clean_result(result))
-            print '-------------------', len(tables)
             for content in tables:
                 links = link_match.findall(content)
-                links = [url_base+item for item in links]
+                links = [url_base + item for item in links]
                 client.set_chunk_url(links)
 
     print result.url
+
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,6 @@ from scrap_request import load_url_from_queue, get_content_page
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 import time
 import logging
-import sys
 import traceback
 import argparse
 
@@ -19,7 +18,6 @@ logger.setLevel(level_debug)
 file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
-
 
 if __name__ == '__main__':
     executors = {
@@ -60,7 +58,7 @@ if __name__ == '__main__':
 
     url_on_queue = lambda: load_url_from_queue(int(batch))
     url_on_fallback = lambda: load_url_from_queue(
-        int(batch) if int(batch) <= 2 else int(round(int(batch)/2.0)),
+        int(batch) if int(batch) <= 2 else int(round(int(batch) / 2.0)),
         collection="fallback"
     )
 
@@ -68,14 +66,11 @@ if __name__ == '__main__':
         if not args.ignore:
             visited_links = [url]
             get_content_page(url, visited_links=visited_links)
-        # url_on_queue()
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
-        # sys.exit(1)
 
     scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
-    #scheduler.add_job(url_on_queue, trigger='interval', seconds=36)
     scheduler.add_job(url_on_fallback, trigger='interval', seconds=22)
     scheduler.start()
 
