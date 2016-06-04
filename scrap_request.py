@@ -351,15 +351,5 @@ if __name__ == '__main__':
     data_doc = {}
     visited_link = [url]
 
-    # load_url_from_queue(batch=15)
-
-    # data_doc = get_content_page(url, visited_links=visited_link)
-    # print data_doc
-    #
-    # print 'content_doc principal: ', len(data_doc['documentos_relacionados']['fase'])
-    # print 'links visitados: ', len(visited_link)
-
-    #save_or_update(data_doc)
-
     print 'finish in: ', time.time() - start_
 

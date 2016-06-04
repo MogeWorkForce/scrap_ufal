@@ -3,7 +3,6 @@ from __future__ import absolute_import, unicode_literals
 from data_model.dao.mongodb import UrlManagerDao
 import requests
 from datetime import date, timedelta
-import argparse
 import logging
 import re
 import os
@@ -41,12 +40,11 @@ def clean_result(result):
     return result.text.replace('\n', '').replace('  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
-def main(date_start=None, before=False, time_elapse=1):
+def main(date_start=None, before=False, time_elapse=15):
     url_base = "http://portaltransparencia.gov.br/despesasdiarias/"
     url = url_base+"resultado"
 
-    #elapse = timedelta(days=time_elapse)
-    elapse = timedelta(days=15)
+    elapse = timedelta(days=time_elapse)
 
     if not date_start:
         date_start = date.today()
@@ -100,12 +98,4 @@ def main(date_start=None, before=False, time_elapse=1):
     print result.url
 
 if __name__ == "__main__":
-    """
-    parser = argparse.ArgumentParser(
-        description="Set a Url to crawler the new notas_empenho inserted on evaluated period"
-    )
-
-    parser.add_argument("-u", "--url", type=str,
-                        help="Url to search notas_empenhos")
-        """
     main()

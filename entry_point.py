@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from bottle import Bottle, run, template, request, response
+from bottle import Bottle, run, request, response
 from gevent import monkey, queue; monkey.patch_all()
 from data_model.dao.mongodb import UrlManagerDao
 from gevent.pywsgi import WSGIServer
-from data_model.dao.mongodb import UrlManagerDao
 from datetime import date
 import os
 import json
 import logging
 import functools
-import base64
-import time
 import traceback
-import os
 
 __author__ = 'hermogenes'
 
@@ -40,7 +36,7 @@ VERSION = "v1"
 MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
-   client = UrlManagerDao()
+    client = UrlManagerDao()
 elif MODE == "DOCKER":
     client = UrlManagerDao(host='172.17.0.1')
 else:
