@@ -19,7 +19,7 @@ RUN pip install pymongo==3.2 \
         APScheduler==3.0.5 \
         gunicorn==19.4.5 \
         bottle==0.12.9 \
-        gevent==1.1.1 \
+        gevent==1.1.1 
 
 EXPOSE 8080
 ENTRYPOINT ["bash", "run.sh"]
