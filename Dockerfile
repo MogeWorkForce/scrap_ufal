@@ -13,7 +13,12 @@ COPY . /
 #ENV MODE=DOCKER
 
 RUN chmod +x *.sh
-RUN pip install -r requeriments.txt > pip.log
+RUN pip install pymongo==3.2 \
+        requests==2.9.1 \
+        APScheduler==3.0.5 \
+        gunicorn==19.4.5 \
+        bottle==0.12.9 \
+        gevent==1.1.1
 
 EXPOSE 8080
 ENTRYPOINT ["bash", "run.sh"]
