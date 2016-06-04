@@ -33,6 +33,7 @@ VERSION = "v1"
 
 MODE = os.environ.get('MODE', 'DEV')
 
+print MODE
 if MODE == 'DEV':
     client = UrlManagerDao()
 elif MODE == "DOCKER":
@@ -73,7 +74,7 @@ def status_enqueue(collection):
         body_error['message']['errors'].append("Invalid Content-Type")
         return body_error
 
-    key = {"_id": date.today().strftime("%Y%m%d")}
+    key = {"_id": int(date.today().strftime("%Y%m%d"))}
     try:
         result = client.db_urls[collection].find_one(key)
     except:
@@ -88,7 +89,7 @@ def status_enqueue(collection):
 
 @app.get("/")
 def home():
-    key = {"_id": date.today().strftime("%Y%m%d")}
+    key = {"_id": int(date.today().strftime("%Y%m%d"))}
     try:
         result = client.db_urls['queue'].find_one(key)
     except:
