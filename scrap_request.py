@@ -137,6 +137,11 @@ def get_content_page(url, visited_links=None, data=None):
         proxy_dao.mark_unused_proxy(_id)
     except KeyError:
         proxy_dao.mark_unused_proxy(_id)
+        time.sleep(3)
+        raise
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id)
+        time.sleep(3)
         raise
 
     return data
@@ -313,6 +318,11 @@ def load_content(content_original, paginator=False, data=None,
                         proxy_dao.mark_unused_proxy(_id)
                     except KeyError:
                         proxy_dao.mark_unused_proxy(_id)
+                        time.sleep(3)
+                        raise
+                    except Exception:
+                        proxy_dao.mark_unused_proxy(_id)
+                        time.sleep(3)
                         raise
 
     if not paginator:

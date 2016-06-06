@@ -7,6 +7,7 @@ import time
 import logging
 import traceback
 import argparse
+import os
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -18,6 +19,16 @@ logger.setLevel(level_debug)
 file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
+
+from data_model.dao.mongodb import ProxiesDao
+MODE = os.environ.get('MODE', 'DEV')
+
+if MODE == 'DEV':
+    proxy_dao = ProxiesDao()
+elif MODE == "DOCKER":
+    proxy_dao = ProxiesDao(host='172.17.0.1')
+else:
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 if __name__ == '__main__':
     executors = {
@@ -79,4 +90,5 @@ if __name__ == '__main__':
             time.sleep(30)
 
     except (KeyboardInterrupt, SystemExit):
+        proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})
         scheduler.shutdown()
