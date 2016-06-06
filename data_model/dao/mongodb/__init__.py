@@ -148,3 +148,36 @@ class UrlManagerDao(MongoClient):
 
         result = self.db_urls[collection].find(params)
         return bool(list(result))
+
+
+class ProxiesDao(MongoClient):
+    def __init__(self, *args, **kwargs):
+        super(ProxiesDao, self).__init__(*args, **kwargs)
+        self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
+            self[os.environ.get('MONGODB_ADDON_DB')]
+        self.proxies = self.db_proxy.proxies
+
+    def insert_proxies(self, list_proxy):
+        if not isinstance(list_proxy, (list, tuple)):
+            list_proxy = [list_proxy]
+
+        list_proxy = [
+            {
+                'in_use': False,
+                'proxy': x['proxy'],
+                'localization': x['localization']
+            } for x in list_proxy
+        ]
+        self.proxies.insert_many(list_proxy)
+
+    def get_unused_proxy(self):
+        proxy = self.proxies.find_one({'in_use': False})
+        if not proxy:
+            raise Exception('No one proxy is free in this moment')
+
+        self.proxies.update_one({"_id": proxy['_id']}, {"$set": {"in_use": True}})
+        logger.debug(proxy)
+        return proxy
+
+    def mark_unused_proxy(self, key):
+        self.proxies.update_one({"_id": key}, {"$set": {"in_use": True}})

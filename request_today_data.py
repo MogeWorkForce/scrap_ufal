@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from data_model.dao.mongodb import UrlManagerDao
+from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
 import requests
 from datetime import date, timedelta
 import logging
@@ -11,10 +11,13 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
     client = UrlManagerDao()
+    proxy_dao = ProxiesDao()
 elif MODE == "DOCKER":
     client = UrlManagerDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 else:
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')

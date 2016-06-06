@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
-from data_model.dao.mongodb import DocumentsDao
+from data_model.dao.mongodb import DocumentsDao, ProxiesDao
 import requests
 import re
 import time
@@ -45,13 +45,24 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
     client = DocumentsDao()
+    proxy_dao = ProxiesDao()
 elif MODE == "DOCKER":
     client = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 else:
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 start_ = time.time()
 
+
+def get_any_proxy():
+    prx = proxy_dao.get_unused_proxy()
+    key_ = prx['proxy'].split('//')[0]
+    proxies = {
+        key_: prx
+    }
+    return prx['_id'], proxies
 
 def save_or_update(doc):
     client.insert_document(doc, upsert=True)
@@ -94,13 +105,14 @@ def get_general_data(url, data=None):
 
 
 # TODO: pessimo nome, mudar isso depois
-def cleaned_content(url, visited_links):
-    time.sleep(3.1)
+def cleaned_content(url, visited_links, proxy):
+    time.sleep(4.1)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     }
-    result = requests.get(url, timeout=10, headers=headers)
+    logger.debug(proxy)
+    result = requests.get(url, timeout=10, headers=headers, proxies=proxy)
     visited_links.append(url)
 
     no_spaces = clean_result(result)
@@ -116,15 +128,21 @@ def get_content_page(url, visited_links=None, data=None):
     data = get_general_data(url, data)
     paginator = False
 
-    result = cleaned_content(url, visited_links)
+    _id, prx = get_any_proxy()
+    try:
+        result = cleaned_content(url, visited_links, prx)
 
-    no_spaces = result
-    data = load_content(no_spaces, paginator, data, visited_links)
+        no_spaces = result
+        data = load_content(no_spaces, paginator, data, visited_links, prx)
+    except KeyError:
+        proxy_dao.mark_unused_proxy(_id)
+        raise
+
     return data
 
 
 def load_content(content_original, paginator=False, data=None,
-                 visited_links=None):
+                 visited_links=None, proxy=None):
     if not visited_links:
         visited_links = []
 
@@ -172,6 +190,8 @@ def load_content(content_original, paginator=False, data=None,
         duo_rotulo = False
         referency = 0
         class_tr_rotulo = ''
+        last_key_tr = ''
+        last_key_th = ''
         for j, content in enumerate(match_tr.finditer(table)):
             line = content.group('content_tr').strip()
 
@@ -188,8 +208,7 @@ def load_content(content_original, paginator=False, data=None,
                 skip = False
 
             class_tr = content.group('class_tr')
-            last_key_tr = ''
-            last_key_th = ''
+
             sub_head = []
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
@@ -283,9 +302,16 @@ def load_content(content_original, paginator=False, data=None,
                     link_ = url_ + end_link_paginator % next_pg
 
                 if link_ not in visited_links:
-                    result = cleaned_content(link_, visited_links)
-                    no_spaces = result
-                    data = load_content(no_spaces, True, data, visited_links)
+                    _id, prx = get_any_proxy()
+                    try:
+                        result = cleaned_content(link_, visited_links, prx)
+                        no_spaces = result
+                        data = load_content(
+                            no_spaces, True, data, visited_links, prx
+                        )
+                    except KeyError:
+                        proxy_dao.mark_unused_proxy(_id)
+                        raise
 
     if not paginator:
         save_or_update(data)
