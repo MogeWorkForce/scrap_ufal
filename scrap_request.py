@@ -134,6 +134,7 @@ def get_content_page(url, visited_links=None, data=None):
 
         no_spaces = result
         data = load_content(no_spaces, paginator, data, visited_links, prx)
+        proxy_dao.mark_unused_proxy(_id)
     except KeyError:
         proxy_dao.mark_unused_proxy(_id)
         raise
@@ -309,6 +310,7 @@ def load_content(content_original, paginator=False, data=None,
                         data = load_content(
                             no_spaces, True, data, visited_links, prx
                         )
+                        proxy_dao.mark_unused_proxy(_id)
                     except KeyError:
                         proxy_dao.mark_unused_proxy(_id)
                         raise
