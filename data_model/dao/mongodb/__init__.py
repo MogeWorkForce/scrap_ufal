@@ -180,4 +180,6 @@ class ProxiesDao(MongoClient):
         return proxy
 
     def mark_unused_proxy(self, key):
-        self.proxies.update_one({"_id": key}, {"$set": {"in_use": True}})
+        tmp = self.proxies.update_one({"_id": key}, {"$set": {"in_use": False}})
+        msg = 'release key(%s): %r' % (key, tmp)
+        logger.debug(msg)

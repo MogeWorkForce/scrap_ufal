@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     job_defaults = {
         'coalesce': False,
-        'max_instances': 3
+        'max_instances': 5
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')

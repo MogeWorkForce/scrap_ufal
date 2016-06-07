@@ -141,7 +141,6 @@ def get_content_page(url, visited_links=None, data=None):
         raise
     except Exception:
         proxy_dao.mark_unused_proxy(_id)
-        time.sleep(3)
         raise
 
     return data
@@ -322,7 +321,6 @@ def load_content(content_original, paginator=False, data=None,
                         raise
                     except Exception:
                         proxy_dao.mark_unused_proxy(_id)
-                        time.sleep(3)
                         raise
 
     if not paginator:
