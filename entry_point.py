@@ -68,12 +68,6 @@ def insert_urls():
 
 @app.get(NAME_VERSION+"status/urls/<collection>")
 def status_enqueue(collection):
-    body_error = {"message": {"errors": [], "success": False}}
-    if request.headers.get('Content-Type') != "application/json":
-        logRest.warning("Invalid Content-Type")
-        body_error['message']['errors'].append("Invalid Content-Type")
-        return body_error
-
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
     try:
         result = client.db_urls[collection].find_one(key)
@@ -91,7 +85,18 @@ def status_enqueue(collection):
 def home():
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
     try:
-        result = client.db_urls['queue'].find_one(key)
+        result_queue = client.db_urls['queue'].find_one(key)
+        result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
+        result_fallback = client.db_urls['fallback'].find_one(key)
+
+        result = {
+            "urls": {
+                "queue": len(result_queue['urls']) if result_queue else 0,
+                "queue_loaded": len(result_queue_loaded['urls']) if result_queue else 0,
+                "fallback": len(result_fallback['urls']) if result_queue else 0
+            }
+        }
+
     except:
         traceback.print_exc()
         result = {"urls": []}

@@ -6,6 +6,7 @@ from datetime import date
 import logging
 import copy
 import os
+import random
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -171,9 +172,11 @@ class ProxiesDao(MongoClient):
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        proxy = self.proxies.find_one({'in_use': False})
-        if not proxy:
+        list_proxy = list(self.proxies.find({'in_use': False}))
+        if not list_proxy:
             raise Exception('No one proxy is free in this moment')
+
+        proxy = list_proxy[random.randrange(0, len(list_proxy) )]
 
         self.proxies.update_one({"_id": proxy['_id']}, {"$set": {"in_use": True}})
         logger.debug(proxy)
