@@ -327,7 +327,8 @@ def get_paginator_content(content_original, data, visited_links):
                     result = cleaned_content(link_, visited_links, prx)
                     no_spaces = result
                     data = load_content(
-                        no_spaces, True, data, visited_links, prx
+                        content_original=no_spaces, paginator=True,
+                        data=data, visited_links=visited_links
                     )
                     proxy_dao.mark_unused_proxy(_id)
                 except KeyError:
