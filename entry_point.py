@@ -33,7 +33,6 @@ VERSION = "v1"
 
 MODE = os.environ.get('MODE', 'DEV')
 
-print MODE
 if MODE == 'DEV':
     client = UrlManagerDao()
 elif MODE == "DOCKER":
@@ -69,12 +68,10 @@ def insert_urls():
 @app.get(NAME_VERSION+"status/urls/<collection>")
 def status_enqueue(collection):
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
-    try:
-        result = client.db_urls[collection].find_one(key)
-    except:
-        traceback.print_exc()
-        result = {"urls": []}
 
+    result = client.db_urls[collection].find_one(key)
+
+    result = {"urls": []} if not result else result
     return {
         "message":
         {"success": True, "result": "%s have: %s" % (collection.upper(), len(result['urls']))}
@@ -84,22 +81,19 @@ def status_enqueue(collection):
 @app.get("/")
 def home():
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
-    try:
-        result_queue = client.db_urls['queue'].find_one(key)
-        result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
-        result_fallback = client.db_urls['fallback'].find_one(key)
 
-        result = {
-            "urls": {
-                "queue": len(result_queue['urls']) if result_queue else 0,
-                "queue_loaded": len(result_queue_loaded['urls']) if result_queue else 0,
-                "fallback": len(result_fallback['urls']) if result_queue else 0
-            }
+    result_queue = client.db_urls['queue'].find_one(key)
+    result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
+    result_fallback = client.db_urls['fallback'].find_one(key)
+
+    result = {
+        "urls": {
+            "queue": len(result_queue['urls']) if result_queue else 0,
+            "queue_loaded": len(result_queue_loaded['urls']) if result_queue else 0,
+            "fallback": len(result_fallback['urls']) if result_queue else 0
         }
+    }
 
-    except:
-        traceback.print_exc()
-        result = {"urls": []}
     return result
 
 
