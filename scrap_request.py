@@ -293,7 +293,7 @@ def load_content(content_original, paginator=False, data=None,
                         docs_relacionados.append(new_url)
 
     if not paginator:
-        data = get_paginator_content(content_original, data, visited_links, proxy)
+        data = get_paginator_content(content_original, data, visited_links)
         save_or_update(data)
 
     client.url.set_chunk_url(docs_relacionados)
@@ -306,7 +306,7 @@ def clean_result(result):
         '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
-def get_paginator_content(content_original, data, visited_links, proxy):
+def get_paginator_content(content_original, data, visited_links):
     paginas = get_paginator.findall(content_original)
     end_link_paginator = '&pagina=%s#paginacao'
     for pg in paginas[:1]:
