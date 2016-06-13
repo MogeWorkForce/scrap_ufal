@@ -64,6 +64,7 @@ def get_any_proxy():
     }
     return prx['_id'], proxies
 
+
 def save_or_update(doc):
     client.insert_document(doc, upsert=True)
 
@@ -276,7 +277,7 @@ def load_content(content_original, paginator=False, data=None,
                                     content_value)
                         else:
                             if not data[head[0]][rotulo[referency]][
-                                                            sub_head[-1]]:
+                                    sub_head[-1]]:
                                 data[head[0]][rotulo[referency]][
                                     sub_head[-1]] = [content_value]
                             else:
@@ -286,44 +287,13 @@ def load_content(content_original, paginator=False, data=None,
                 link_document = content_row.group('link_document')
                 if link_document:
                     new_url = data['geral_data']['url_base'] + '/' + \
-                              data['geral_data'][
-                                  'session'] + '/' + link_document
+                        data['geral_data'][
+                        'session'] + '/' + link_document
                     if new_url not in visited_links:
                         docs_relacionados.append(new_url)
 
     if not paginator:
-        paginas = get_paginator.findall(content_original)
-        end_link_paginator = '&pagina=%s#paginacao'
-        for pg in paginas[:1]:
-            _, end = pg
-            for next_pg in xrange(1, int(end) + 1):
-                url_ = data['geral_data']['url_base'] + '/' + \
-                       data['geral_data']['session'] + "/"
-                url_ += data['geral_data']['type_doc'] + '?documento=' + \
-                        data['geral_data']['num_doc']
-                if next_pg == 1:
-                    link_ = url_
-                else:
-                    link_ = url_ + end_link_paginator % next_pg
-
-                if link_ not in visited_links:
-                    _id, prx = get_any_proxy()
-                    try:
-                        result = cleaned_content(link_, visited_links, prx)
-                        no_spaces = result
-                        data = load_content(
-                            no_spaces, True, data, visited_links, prx
-                        )
-                        proxy_dao.mark_unused_proxy(_id)
-                    except KeyError:
-                        proxy_dao.mark_unused_proxy(_id)
-                        time.sleep(3)
-                        raise
-                    except Exception:
-                        proxy_dao.mark_unused_proxy(_id)
-                        raise
-
-    if not paginator:
+        data = get_paginator_content(content_original, data, visited_links, proxy)
         save_or_update(data)
 
     client.url.set_chunk_url(docs_relacionados)
@@ -336,11 +306,45 @@ def clean_result(result):
         '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
+def get_paginator_content(content_original, data, visited_links, proxy):
+    paginas = get_paginator.findall(content_original)
+    end_link_paginator = '&pagina=%s#paginacao'
+    for pg in paginas[:1]:
+        _, end = pg
+        for next_pg in xrange(1, int(end) + 1):
+            url_ = data['geral_data']['url_base'] + '/' + \
+                data['geral_data']['session'] + "/"
+            url_ += data['geral_data']['type_doc'] + '?documento=' + \
+                data['geral_data']['num_doc']
+            if next_pg == 1:
+                link_ = url_
+            else:
+                link_ = url_ + end_link_paginator % next_pg
+
+            if link_ not in visited_links:
+                _id, prx = get_any_proxy()
+                try:
+                    result = cleaned_content(link_, visited_links, prx)
+                    no_spaces = result
+                    data = load_content(
+                        no_spaces, True, data, visited_links, prx
+                    )
+                    proxy_dao.mark_unused_proxy(_id)
+                except KeyError:
+                    proxy_dao.mark_unused_proxy(_id)
+                    time.sleep(3)
+                    raise
+                except Exception:
+                    proxy_dao.mark_unused_proxy(_id)
+                    raise
+    return data
+
+
 def load_url_from_queue(batch=1, collection='queue'):
     try:
         import random
         logger.debug('----- start new job! (%s) Batches: %s' % (
-                                                    collection.upper(), batch))
+            collection.upper(), batch))
         date_ = date.today()
         key = {"_id": int(date_.strftime(client.url.PATTERN_PK))}
         urls_load = client.url.db_urls[collection].find_one(key)
@@ -357,11 +361,11 @@ def load_url_from_queue(batch=1, collection='queue'):
             init_ = random.randint(0, length_urls + 1)
 
         logger.debug("(%s) Interval %s to %s" % (
-                                        collection.upper(),
-                                        init_,
-                                        init_ + batch
-                                    )
-                     )
+            collection.upper(),
+            init_,
+            init_ + batch
+        )
+        )
         tmp_urls_load = urls_load['urls'][init_:init_ + batch]
 
         visited_link = []
@@ -371,7 +375,7 @@ def load_url_from_queue(batch=1, collection='queue'):
 
                 if not in_:
                     logger.debug('Start load url_from %s! %s' % (
-                    collection.upper(), url))
+                        collection.upper(), url))
                     get_content_page(url, visited_links=visited_link)
                     client.url.dinamic_url('queue_loaded', url)
                 else:
@@ -384,7 +388,7 @@ def load_url_from_queue(batch=1, collection='queue'):
         try:
             client.url.remove_urls(tmp_urls_load, collection=collection)
             logger.debug('(%s)Pass to remove_urls! Batches: %d' % (
-            collection.upper(), batch))
+                collection.upper(), batch))
         except Exception as e:
             traceback.print_exc()
             logger.warning("Error on remove urls")
