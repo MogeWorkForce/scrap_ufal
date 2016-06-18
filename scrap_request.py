@@ -344,8 +344,8 @@ def get_paginator_content(content_original, data, visited_links):
 def load_url_from_queue(batch=1, collection='queue'):
     try:
         import random
-        logger.debug('----- start new job! (%s) Batches: %s' % (
-            collection.upper(), batch))
+        logger.debug('----- start new job! (%s) Batches: %s',
+                     collection.upper(), batch)
         date_ = date.today()
         key = {"_id": int(date_.strftime(client.url.PATTERN_PK))}
         urls_load = client.url.db_urls[collection].find_one(key)
@@ -354,19 +354,18 @@ def load_url_from_queue(batch=1, collection='queue'):
 
         if length_urls <= 0:
             logger.warning(
-                "(%s) Finish the Process all Urls" % collection.upper())
+                "(%s) Finish the Process all Urls", collection.upper())
             return
         elif length_urls == 1:
             init_ = 0
         else:
             init_ = random.randint(0, length_urls + 1)
 
-        logger.debug("(%s) Interval %s to %s" % (
-            collection.upper(),
-            init_,
-            init_ + batch
-        )
-        )
+        logger.debug("(%s) Interval %s to %s",
+                     collection.upper(),
+                     init_,
+                     init_ + batch
+                     )
         tmp_urls_load = urls_load['urls'][init_:init_ + batch]
 
         visited_link = []
@@ -375,28 +374,28 @@ def load_url_from_queue(batch=1, collection='queue'):
                 in_ = client.url.verify_today_urls(url)
 
                 if not in_:
-                    logger.debug('Start load url_from %s! %s' % (
-                        collection.upper(), url))
+                    logger.debug('Start load url_from %s! %s',
+                                 collection.upper(), url)
                     get_content_page(url, visited_links=visited_link)
                     client.url.dinamic_url('queue_loaded', url)
                 else:
-                    logger.warning("Url already loaded: %s" % url)
+                    logger.warning("Url already loaded: %s", url)
             except:
                 traceback.print_exc()
                 client.url.dinamic_url('fallback', url)
-                logger.warning("Call Fallback to Url: %s" % url)
+                logger.warning("Call Fallback to Url: %s", url)
 
         try:
             client.url.remove_urls(tmp_urls_load, collection=collection)
-            logger.debug('(%s)Pass to remove_urls! Batches: %d' % (
-                collection.upper(), batch))
+            logger.debug('(%s)Pass to remove_urls! Batches: %d',
+                         collection.upper(), batch)
         except Exception as e:
             traceback.print_exc()
             logger.warning("Error on remove urls")
 
     except:
         traceback.print_exc()
-        logger.debug('Errors on %s!' % collection.upper())
+        logger.debug('Errors on %s!', collection.upper())
         return
 
 

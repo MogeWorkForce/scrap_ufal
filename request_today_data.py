@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
+
 import requests
-from datetime import date, timedelta
 import logging
 import re
 import os
+
+from datetime import date, timedelta
+from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
+from scrap_request import get_any_proxy
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -53,7 +56,7 @@ def main(date_start=None, before=False, time_elapse=15):
     elapse = timedelta(days=time_elapse)
 
     if not date_start:
-        date_start = date.today()
+        date_start = date.today() - timedelta(days=30)
 
     datas = [date_start,
              date_start - elapse if not before else date_start + elapse]
@@ -72,32 +75,41 @@ def main(date_start=None, before=False, time_elapse=15):
         "codigoFavorecido": None,
         "consulta": "avancada"
     }
+    _id, prx = get_any_proxy()
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        }
+        result = requests.get(url, params=params, headers=headers, proxies=prx)
+        tables = match.findall(clean_result(result))
+        for content in tables:
+            links = link_match.findall(content)
+            links = [url_base + item for item in links]
+            client.set_chunk_url(links)
 
-    result = requests.get(url, params=params)
-    tables = match.findall(clean_result(result))
-    for content in tables:
-        links = link_match.findall(content)
-        links = [url_base + item for item in links]
-        client.set_chunk_url(links)
+        _url_pg = result.url
+        paginas = get_paginator.findall(clean_result(result))
+        end_link_paginator = '&pagina=%s#paginacao'
 
-    _url_pg = result.url
-    paginas = get_paginator.findall(clean_result(result))
-    end_link_paginator = '&pagina=%s#paginacao'
+        for pg in paginas[:1]:
+            _, end = pg
+            for next_pg in xrange(1, int(end) + 1):
+                if next_pg == 1:
+                    continue
+                else:
+                    link_ = _url_pg + end_link_paginator % next_pg
 
-    for pg in paginas[:1]:
-        _, end = pg
-        for next_pg in xrange(1, int(end) + 1):
-            if next_pg == 1:
-                continue
-            else:
-                link_ = _url_pg + end_link_paginator % next_pg
+                result = requests.get(link_, headers=headers, proxies=prx)
+                tables = match.findall(clean_result(result))
+                for content in tables:
+                    links = link_match.findall(content)
+                    links = [url_base + item for item in links]
+                    client.set_chunk_url(links)
 
-            result = requests.get(link_)
-            tables = match.findall(clean_result(result))
-            for content in tables:
-                links = link_match.findall(content)
-                links = [url_base + item for item in links]
-                client.set_chunk_url(links)
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id)
+        raise
 
     print result.url
 

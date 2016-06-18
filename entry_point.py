@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from bottle import Bottle, run, request
-from gevent import monkey, queue
+from gevent import monkey
 monkey.patch_all()
-from data_model.dao.mongodb import UrlManagerDao
+from data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
 from datetime import date
-import os
+
+import functools
 import json
 import logging
-import functools
+import time
+import os
 
 __author__ = 'hermogenes'
 
@@ -36,10 +38,16 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
     client = UrlManagerDao()
+    documents = DocumentsDao()
+    proxy_dao = ProxiesDao()
 elif MODE == "DOCKER":
     client = UrlManagerDao(host='172.17.0.1')
+    documents = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 else:
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
+    documents = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 
@@ -82,21 +90,45 @@ def status_enqueue(collection):
 
 @app.get("/")
 def home():
+    start = time.time()
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
 
     result_queue = client.db_urls['queue'].find_one(key)
     result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
     result_fallback = client.db_urls['fallback'].find_one(key)
 
+    documents_total = documents.documents.count()
+    empenho = documents.documents.find(
+        {"dados_basicos.fase": "Empenho"}).count()
+    pagamento = documents.documents.find(
+        {"dados_basicos.fase": "Pagamento"}).count()
+    liquidacao = documents.documents.find(
+        {"dados_basicos.fase": "Liquidação"}).count()
+
+    proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
+    proxies_avaible = proxy_dao.proxies.find({"in_use": False}).count()
+
     result = {
         "urls": {
             "queue": len(result_queue['urls']) if result_queue else 0,
             "queue_loaded": len(result_queue_loaded['urls']) if result_queue_loaded else 0,
             "fallback": len(result_fallback['urls']) if result_fallback else 0
+        },
+        "documents": {
+            "total": documents_total,
+            "empenho": empenho,
+            "pagamento": pagamento,
+            "liquidacao": liquidacao,
+        },
+        "proxies": {
+            "in_use": proxies_in_use,
+            "avaible": proxies_avaible
         }
     }
-    return_msg = json.dumps(result)
-    return_msg += "<script>setInterval(function() {location.reload(true)}, 6000);</script>"
+    return_msg = json.dumps(result, indent=3)
+    return_msg = "<pre>"+return_msg+"</pre>"
+    return_msg += "<br>%.6f" % (time.time() - start)
+    return_msg += "<script>setInterval(function() {location.reload(true)}, 20000);</script>"
     return return_msg
 
 

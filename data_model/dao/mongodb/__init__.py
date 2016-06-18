@@ -182,7 +182,7 @@ class ProxiesDao(MongoClient):
             raise Exception('No one proxy is free in this moment')
 
         chosed_proxy = random.randrange(0, len(list_proxy))
-        logger.debug("Proxy choised your index are: %d" % chosed_proxy)
+        logger.debug("Proxy choised your index are: %d", chosed_proxy)
         proxy = list_proxy[chosed_proxy]
 
         self.proxies.update_one(
@@ -193,5 +193,4 @@ class ProxiesDao(MongoClient):
     def mark_unused_proxy(self, key):
         tmp = self.proxies.update_one(
             {"_id": key}, {"$set": {"in_use": False}})
-        msg = 'release key(%s): %r' % (key, tmp)
-        logger.debug(msg)
+        logger.debug('release key(%s)', key)
