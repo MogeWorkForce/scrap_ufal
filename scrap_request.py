@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from unicodedata import normalize
-from data_model.dao.mongodb import DocumentsDao
+from data_model.dao.mongodb import DocumentsDao, ProxiesDao
 import requests
 import re
 import time
@@ -45,12 +45,24 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
     client = DocumentsDao()
+    proxy_dao = ProxiesDao()
 elif MODE == "DOCKER":
     client = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 else:
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 start_ = time.time()
+
+
+def get_any_proxy():
+    prx = proxy_dao.get_unused_proxy()
+    key_ = prx['proxy'].split('//')[0]
+    proxies = {
+        key_: prx
+    }
+    return prx['_id'], proxies
 
 
 def save_or_update(doc):
@@ -94,13 +106,14 @@ def get_general_data(url, data=None):
 
 
 # TODO: pessimo nome, mudar isso depois
-def cleaned_content(url, visited_links):
-    time.sleep(3.1)
+def cleaned_content(url, visited_links, proxy):
+    time.sleep(4.1)
     logger.debug((len(visited_links), url))
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     }
-    result = requests.get(url, timeout=10, headers=headers)
+    logger.debug(proxy)
+    result = requests.get(url, timeout=10, headers=headers, proxies=proxy)
     visited_links.append(url)
 
     no_spaces = clean_result(result)
@@ -116,10 +129,21 @@ def get_content_page(url, visited_links=None, data=None):
     data = get_general_data(url, data)
     paginator = False
 
-    result = cleaned_content(url, visited_links)
+    _id, prx = get_any_proxy()
+    try:
+        result = cleaned_content(url, visited_links, prx)
 
-    no_spaces = result
-    data = load_content(no_spaces, paginator, data, visited_links)
+        no_spaces = result
+        data = load_content(no_spaces, paginator, data, visited_links)
+        proxy_dao.mark_unused_proxy(_id)
+    except KeyError:
+        proxy_dao.mark_unused_proxy(_id)
+        time.sleep(3)
+        raise
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id)
+        raise
+
     return data
 
 
@@ -172,6 +196,8 @@ def load_content(content_original, paginator=False, data=None,
         duo_rotulo = False
         referency = 0
         class_tr_rotulo = ''
+        last_key_tr = ''
+        last_key_th = ''
         for j, content in enumerate(match_tr.finditer(table)):
             line = content.group('content_tr').strip()
 
@@ -188,8 +214,7 @@ def load_content(content_original, paginator=False, data=None,
                 skip = False
 
             class_tr = content.group('class_tr')
-            last_key_tr = ''
-            last_key_th = ''
+
             sub_head = []
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
@@ -252,7 +277,7 @@ def load_content(content_original, paginator=False, data=None,
                                     content_value)
                         else:
                             if not data[head[0]][rotulo[referency]][
-                                                            sub_head[-1]]:
+                                    sub_head[-1]]:
                                 data[head[0]][rotulo[referency]][
                                     sub_head[-1]] = [content_value]
                             else:
@@ -262,32 +287,13 @@ def load_content(content_original, paginator=False, data=None,
                 link_document = content_row.group('link_document')
                 if link_document:
                     new_url = data['geral_data']['url_base'] + '/' + \
-                              data['geral_data'][
-                                  'session'] + '/' + link_document
+                        data['geral_data'][
+                        'session'] + '/' + link_document
                     if new_url not in visited_links:
                         docs_relacionados.append(new_url)
 
     if not paginator:
-        paginas = get_paginator.findall(content_original)
-        end_link_paginator = '&pagina=%s#paginacao'
-        for pg in paginas[:1]:
-            _, end = pg
-            for next_pg in xrange(1, int(end) + 1):
-                url_ = data['geral_data']['url_base'] + '/' + \
-                       data['geral_data']['session'] + "/"
-                url_ += data['geral_data']['type_doc'] + '?documento=' + \
-                        data['geral_data']['num_doc']
-                if next_pg == 1:
-                    link_ = url_
-                else:
-                    link_ = url_ + end_link_paginator % next_pg
-
-                if link_ not in visited_links:
-                    result = cleaned_content(link_, visited_links)
-                    no_spaces = result
-                    data = load_content(no_spaces, True, data, visited_links)
-
-    if not paginator:
+        data = get_paginator_content(content_original, data, visited_links)
         save_or_update(data)
 
     client.url.set_chunk_url(docs_relacionados)
@@ -300,11 +306,46 @@ def clean_result(result):
         '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
+def get_paginator_content(content_original, data, visited_links):
+    paginas = get_paginator.findall(content_original)
+    end_link_paginator = '&pagina=%s#paginacao'
+    for pg in paginas[:1]:
+        _, end = pg
+        for next_pg in xrange(1, int(end) + 1):
+            url_ = data['geral_data']['url_base'] + '/' + \
+                data['geral_data']['session'] + "/"
+            url_ += data['geral_data']['type_doc'] + '?documento=' + \
+                data['geral_data']['num_doc']
+            if next_pg == 1:
+                link_ = url_
+            else:
+                link_ = url_ + end_link_paginator % next_pg
+
+            if link_ not in visited_links:
+                _id, prx = get_any_proxy()
+                try:
+                    result = cleaned_content(link_, visited_links, prx)
+                    no_spaces = result
+                    data = load_content(
+                        content_original=no_spaces, paginator=True,
+                        data=data, visited_links=visited_links
+                    )
+                    proxy_dao.mark_unused_proxy(_id)
+                except KeyError:
+                    proxy_dao.mark_unused_proxy(_id)
+                    time.sleep(3)
+                    raise
+                except Exception:
+                    proxy_dao.mark_unused_proxy(_id)
+                    raise
+    return data
+
+
 def load_url_from_queue(batch=1, collection='queue'):
     try:
         import random
-        logger.debug('----- start new job! (%s) Batches: %s' % (
-                                                    collection.upper(), batch))
+        logger.debug('----- start new job! (%s) Batches: %s',
+                     collection.upper(), batch)
         date_ = date.today()
         key = {"_id": int(date_.strftime(client.url.PATTERN_PK))}
         urls_load = client.url.db_urls[collection].find_one(key)
@@ -313,18 +354,17 @@ def load_url_from_queue(batch=1, collection='queue'):
 
         if length_urls <= 0:
             logger.warning(
-                "(%s) Finish the Process all Urls" % collection.upper())
+                "(%s) Finish the Process all Urls", collection.upper())
             return
         elif length_urls == 1:
             init_ = 0
         else:
             init_ = random.randint(0, length_urls + 1)
 
-        logger.debug("(%s) Interval %s to %s" % (
-                                        collection.upper(),
-                                        init_,
-                                        init_ + batch
-                                    )
+        logger.debug("(%s) Interval %s to %s",
+                     collection.upper(),
+                     init_,
+                     init_ + batch
                      )
         tmp_urls_load = urls_load['urls'][init_:init_ + batch]
 
@@ -334,28 +374,28 @@ def load_url_from_queue(batch=1, collection='queue'):
                 in_ = client.url.verify_today_urls(url)
 
                 if not in_:
-                    logger.debug('Start load url_from %s! %s' % (
-                    collection.upper(), url))
+                    logger.debug('Start load url_from %s! %s',
+                                 collection.upper(), url)
                     get_content_page(url, visited_links=visited_link)
                     client.url.dinamic_url('queue_loaded', url)
                 else:
-                    logger.warning("Url already loaded: %s" % url)
+                    logger.warning("Url already loaded: %s", url)
             except:
                 traceback.print_exc()
                 client.url.dinamic_url('fallback', url)
-                logger.warning("Call Fallback to Url: %s" % url)
+                logger.warning("Call Fallback to Url: %s", url)
 
         try:
             client.url.remove_urls(tmp_urls_load, collection=collection)
-            logger.debug('(%s)Pass to remove_urls! Batches: %d' % (
-            collection.upper(), batch))
+            logger.debug('(%s)Pass to remove_urls! Batches: %d',
+                         collection.upper(), batch)
         except Exception as e:
             traceback.print_exc()
             logger.warning("Error on remove urls")
 
     except:
         traceback.print_exc()
-        logger.debug('Errors on %s!' % collection.upper())
+        logger.debug('Errors on %s!', collection.upper())
         return
 
 
