@@ -7,6 +7,7 @@ import time
 import logging
 import traceback
 import argparse
+import os
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -19,23 +20,17 @@ file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
+from data_model.dao.mongodb import ProxiesDao
+MODE = os.environ.get('MODE', 'DEV')
+
+if MODE == 'DEV':
+    proxy_dao = ProxiesDao()
+elif MODE == "DOCKER":
+    proxy_dao = ProxiesDao(host='172.17.0.1')
+else:
+    proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+
 if __name__ == '__main__':
-    executors = {
-        'default': ThreadPoolExecutor(10),
-        'processpool': ProcessPoolExecutor(5),
-    }
-
-    job_defaults = {
-        'coalesce': False,
-        'max_instances': 3
-    }
-
-    logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
-    logScheduller.setLevel(logging.DEBUG)
-
-    scheduler = BackgroundScheduler(
-        logger=logScheduller, executors=executors, job_defaults=job_defaults)
-    # scheduler._logger.setLevel(logging.WARNING)
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
@@ -46,6 +41,9 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ignore', action="store_true",
                         help="Ignore url passed")
 
+    parser.add_argument('-j', '--jobs', type=int, choices=range(1, 31),
+                        help="How many instance you want start")
+
     args = parser.parse_args()
     if not args.ignore:
         if not args.url:
@@ -53,6 +51,24 @@ if __name__ == '__main__':
     else:
         logger.warning("Start ignoring url passed on parameter")
 
+    executors = {
+        'default': ThreadPoolExecutor(10),
+        'processpool': ProcessPoolExecutor(5),
+    }
+
+    job_defaults = {
+        'coalesce': False,
+        'max_instances': int(args.jobs) if args.jobs else 3
+    }
+
+    logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
+    logScheduller.setLevel(logging.DEBUG)
+
+    scheduler = BackgroundScheduler(
+        logger=logScheduller, executors=executors, job_defaults=job_defaults)
+    # scheduler._logger.setLevel(logging.WARNING)
+
+    proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})
     url = args.url
     batch = args.batch
 
@@ -79,4 +95,5 @@ if __name__ == '__main__':
             time.sleep(30)
 
     except (KeyboardInterrupt, SystemExit):
+        proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})
         scheduler.shutdown()

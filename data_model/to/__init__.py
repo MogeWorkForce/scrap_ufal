@@ -1,6 +1,8 @@
 import json
 
+
 class TO(object):
+
     def __init__(self, **kwargs):
         for key, value in kwargs.iteritems():
             if isinstance(value, (dict, )):
@@ -39,10 +41,10 @@ class TO(object):
         for key, item in self.__dict__.iteritems():
             tmp[key] = recursive_acces(key, item)
         return tmp
-        
 
     def pop(self, attr):
         return self.__dict__.pop(str(attr))
+
 
 def recursive_acces(key, obj):
     tmp_data = {}
@@ -69,5 +71,3 @@ if __name__ == '__main__':
     print 'name' in t.test
     print t.test.pop(0)
     print t.test.name.casa
-
-

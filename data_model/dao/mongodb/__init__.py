@@ -6,6 +6,7 @@ from datetime import date
 import logging
 import copy
 import os
+import random
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -24,6 +25,8 @@ logger.debug('-' * 30)
 
 
 class DocumentsDao(MongoClient):
+    PATTERN_PK = '%Y%m%d'
+
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
         self.db_empenho = self.notas_empenho if MODE in ['DEV', "DOCKER"] else \
@@ -33,14 +36,16 @@ class DocumentsDao(MongoClient):
 
     def insert_document(self, doc, upsert=False):
         try:
+            date_ = date.today()
             key = {"_id": doc['dados_basicos']['documento'][0]}
             doc = self.adapt_docs_relacionados(doc)
+            doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
             self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
             url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                    doc['geral_data']['num_doc']
+                doc['geral_data']['num_doc']
             self.url.dinamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -148,3 +153,43 @@ class UrlManagerDao(MongoClient):
 
         result = self.db_urls[collection].find(params)
         return bool(list(result))
+
+
+class ProxiesDao(MongoClient):
+
+    def __init__(self, *args, **kwargs):
+        super(ProxiesDao, self).__init__(*args, **kwargs)
+        self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
+            self[os.environ.get('MONGODB_ADDON_DB')]
+        self.proxies = self.db_proxy.proxies
+
+    def insert_proxies(self, list_proxy):
+        if not isinstance(list_proxy, (list, tuple)):
+            list_proxy = [list_proxy]
+
+        list_proxy = [
+            {
+                'in_use': False,
+                'proxy': x['proxy'],
+                'localization': x['localization']
+            } for x in list_proxy
+        ]
+        self.proxies.insert_many(list_proxy)
+
+    def get_unused_proxy(self):
+        list_proxy = list(self.proxies.find({'in_use': False}))
+        if not list_proxy:
+            raise Exception('No one proxy is free in this moment')
+
+        chosed_proxy = random.randrange(0, len(list_proxy))
+        logger.debug("Proxy choised your index are: %d", chosed_proxy)
+        proxy = list_proxy[chosed_proxy]
+
+        self.proxies.update_one(
+            {"_id": proxy['_id']}, {"$set": {"in_use": True}})
+        logger.debug(proxy)
+        return proxy
+
+    def mark_unused_proxy(self, key):
+        self.proxies.update_one({"_id": key}, {"$set": {"in_use": False}})
+        logger.debug('release key(%s)', key)
