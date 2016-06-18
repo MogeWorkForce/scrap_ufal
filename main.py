@@ -30,7 +30,7 @@ elif MODE == "DOCKER":
 else:
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
     parser.add_argument('-u', '--url', type=str,
                         help="Url to search notas_empenhos")
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
     logScheduller.setLevel(logging.DEBUG)
-    
+
     scheduler = BackgroundScheduler(
         logger=logScheduller, executors=executors, job_defaults=job_defaults)
     # scheduler._logger.setLevel(logging.WARNING)

@@ -25,6 +25,8 @@ logger.debug('-' * 30)
 
 
 class DocumentsDao(MongoClient):
+    PATTERN_PK = '%Y%m%d'
+
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
         self.db_empenho = self.notas_empenho if MODE in ['DEV', "DOCKER"] else \
@@ -34,14 +36,16 @@ class DocumentsDao(MongoClient):
 
     def insert_document(self, doc, upsert=False):
         try:
+            date_ = date.today()
             key = {"_id": doc['dados_basicos']['documento'][0]}
             doc = self.adapt_docs_relacionados(doc)
+            doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
             self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
             url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                    doc['geral_data']['num_doc']
+                doc['geral_data']['num_doc']
             self.url.dinamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -152,6 +156,7 @@ class UrlManagerDao(MongoClient):
 
 
 class ProxiesDao(MongoClient):
+
     def __init__(self, *args, **kwargs):
         super(ProxiesDao, self).__init__(*args, **kwargs)
         self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
@@ -176,13 +181,17 @@ class ProxiesDao(MongoClient):
         if not list_proxy:
             raise Exception('No one proxy is free in this moment')
 
-        proxy = list_proxy[random.randrange(0, len(list_proxy) )]
+        chosed_proxy = random.randrange(0, len(list_proxy))
+        logger.debug("Proxy choised your index are: %d" % chosed_proxy)
+        proxy = list_proxy[chosed_proxy]
 
-        self.proxies.update_one({"_id": proxy['_id']}, {"$set": {"in_use": True}})
+        self.proxies.update_one(
+            {"_id": proxy['_id']}, {"$set": {"in_use": True}})
         logger.debug(proxy)
         return proxy
 
     def mark_unused_proxy(self, key):
-        tmp = self.proxies.update_one({"_id": key}, {"$set": {"in_use": False}})
+        tmp = self.proxies.update_one(
+            {"_id": key}, {"$set": {"in_use": False}})
         msg = 'release key(%s): %r' % (key, tmp)
         logger.debug(msg)

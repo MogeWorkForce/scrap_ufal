@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 from bottle import Bottle, run, request
-from gevent import monkey, queue; monkey.patch_all()
+from gevent import monkey, queue
+monkey.patch_all()
 from data_model.dao.mongodb import UrlManagerDao
 from datetime import date
 import os
+import json
 import logging
 import functools
-import traceback
 
 __author__ = 'hermogenes'
 
@@ -74,7 +75,8 @@ def status_enqueue(collection):
     result = {"urls": []} if not result else result
     return {
         "message":
-        {"success": True, "result": "%s have: %s" % (collection.upper(), len(result['urls']))}
+        {"success": True, "result": "%s have: %s" %
+            (collection.upper(), len(result['urls']))}
     }
 
 
@@ -89,23 +91,18 @@ def home():
     result = {
         "urls": {
             "queue": len(result_queue['urls']) if result_queue else 0,
-            "queue_loaded": len(result_queue_loaded['urls']) if result_queue else 0,
-            "fallback": len(result_fallback['urls']) if result_queue else 0
+            "queue_loaded": len(result_queue_loaded['urls']) if result_queue_loaded else 0,
+            "fallback": len(result_fallback['urls']) if result_fallback else 0
         }
     }
-
-    return result
+    return_msg = json.dumps(result)
+    return_msg += "<script>setInterval(function() {location.reload(true)}, 6000);</script>"
+    return return_msg
 
 
 def run_app():
-    run(
-        app,
-        host='localhost',
-        port=8080,
-        debug=True,
-        reloader=True,
-        server='gevent'
-    )
+    run(app, host='localhost', port=8080,
+        debug=True, reloader=True, server='gevent')
 
 if __name__ == '__main__':
     run_app()
