@@ -10,8 +10,6 @@ import traceback
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 
-from scrap_request import load_url_from_queue, get_content_page
-from request_range_date import get_random_batch
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -25,6 +23,9 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 from data_model.dao.mongodb import ProxiesDao
+from scrap_request import load_url_from_queue, get_content_page
+from request_range_date import get_random_batch
+
 MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':

@@ -26,14 +26,10 @@ link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 get_paginator = re.compile(
     r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
 
+logger = logging.getLogger("Scrap_Ufal.pro_active")
 level_debug = logging.DEBUG
-log_proactive = logging.getLogger("Scrap_Ufal.pro_active")
-log_proactive.setLevel(level_debug)
+logger.setLevel(level_debug)
 
 fmt_data = "%d/%m/%Y"
 
@@ -114,6 +110,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
                 else:
                     link_ = _url_pg + end_link_paginator % next_pg
 
+                logger.debug(link_)
                 result = requests.get(link_, headers=headers, proxies=prx)
                 tables = match.findall(clean_result(result))
                 for content in tables:
