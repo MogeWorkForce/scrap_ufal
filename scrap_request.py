@@ -377,12 +377,12 @@ def load_url_from_queue(batch=1, collection='queue'):
                     logger.debug('Start load url_from %s! %s',
                                  collection.upper(), url)
                     get_content_page(url, visited_links=visited_link)
-                    client.url.dinamic_url('queue_loaded', url)
+                    client.url.dynamic_url('queue_loaded', url)
                 else:
                     logger.warning("Url already loaded: %s", url)
             except:
                 traceback.print_exc()
-                client.url.dinamic_url('fallback', url)
+                client.url.dynamic_url('fallback', url)
                 logger.warning("Call Fallback to Url: %s", url)
 
         try:

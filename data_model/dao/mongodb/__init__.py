@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
-from datetime import date
-import logging
+
+import calendar
 import copy
+import logging
 import os
 import random
+from datetime import date, timedelta
+
+from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
+
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -46,10 +50,10 @@ class DocumentsDao(MongoClient):
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
                 doc['geral_data']['num_doc']
-            self.url.dinamic_url('queue', url_)
+            self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
-            print e
+            logger.error(e)
             logger.debug("move on - DuplicateKey")
 
     def adapt_docs_relacionados(self, doc):
@@ -75,6 +79,8 @@ class DocumentsDao(MongoClient):
 
 class UrlManagerDao(MongoClient):
     PATTERN_PK = '%Y%m%d'
+    PATTERN_PK_MONTH = '%Y%m'
+    LIMIT_DATE_REQUEST = date(2010, 5, 25)
 
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
@@ -83,6 +89,7 @@ class UrlManagerDao(MongoClient):
         ]
         self.queue = self.db_urls.queue
         self.fallback = self.db_urls.fallback
+        self.finder_urls_notas = self.db_urls.finder_urls_notas
 
     def set_chunk_url(self, list_url):
         date_ = date.today()
@@ -106,10 +113,10 @@ class UrlManagerDao(MongoClient):
             try:
                 self.queue.update_one(key, data)
             except DuplicateKeyError as e:
-                print e
+                logger.error(e)
                 logger.debug("move on - DuplicateKey")
 
-    def dinamic_url(self, collection, url):
+    def dynamic_url(self, collection, url):
         date_ = date.today()
         key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
@@ -130,7 +137,7 @@ class UrlManagerDao(MongoClient):
             try:
                 self.db_urls[collection].update_one(key, data)
             except DuplicateKeyError as e:
-                print e
+                logger.error(e)
                 logger.debug("move on - DuplicateKey")
 
     def remove_urls(self, list_urls, collection='queue'):
@@ -153,6 +160,41 @@ class UrlManagerDao(MongoClient):
 
         result = self.db_urls[collection].find(params)
         return bool(list(result))
+
+    def add_period_to_recover_in_portal(self, date_start, month_elapse,
+                                        params_search=None):
+        #TODO: Change this name in future
+        key = {"_id": int(date_start.strftime(self.PATTERN_PK_MONTH))}
+
+        if date_start < self.LIMIT_DATE_REQUEST:
+            date_start = self.LIMIT_DATE_REQUEST
+
+        last_day_of_first_month = calendar.monthrange(
+            date_start.year, date_start.month)[1]
+
+        end_month = date(
+            date_start.year, date_start.month, last_day_of_first_month)
+
+        data = {
+            'date_start': date_start,
+            'date_end': end_month
+        }
+        data.update(key)
+        self.insert_url_finder(data, params_search)
+
+        if month_elapse > 1:
+            new_start_date = end_month + timedelta(days=1)
+            self.add_period_to_recover_in_portal(new_start_date, month_elapse-1)
+
+    def insert_url_finder(self, data, params=None):
+        try:
+            if params and isinstance(params, (dict, )):
+                params = {}
+            data.update({'params': params})
+            self.finder_urls_notas.insert(data)
+        except DuplicateKeyError as e:
+            logger.error(e)
+            logger.debug("Expected error - move on - DuplicateKey")
 
 
 class ProxiesDao(MongoClient):

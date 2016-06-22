@@ -3,8 +3,9 @@ from __future__ import absolute_import, unicode_literals
 
 import requests
 import logging
-import re
 import os
+import random
+import re
 
 from datetime import date, timedelta
 from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
@@ -13,13 +14,13 @@ from scrap_request import get_any_proxy
 MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
-    client = UrlManagerDao()
+    url_dao = UrlManagerDao()
     proxy_dao = ProxiesDao()
 elif MODE == "DOCKER":
-    client = UrlManagerDao(host='172.17.0.1')
+    url_dao = UrlManagerDao(host='172.17.0.1')
     proxy_dao = ProxiesDao(host='172.17.0.1')
 else:
-    client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
+    url_dao = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
@@ -49,32 +50,53 @@ def clean_result(result):
         '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
-def main(date_start=None, before=False, time_elapse=15):
+def get_random_batch(batch_size=5):
+    logger.debug("----- Start Random way to get a urls to feed a queue -----")
+    for _ in xrange(batch_size):
+        pay_load = url_dao.random_finder_urls_notas()
+        key = pay_load.pop('_id')
+        get_links_notas_empenho(**pay_load)
+        url_dao.finder_urls_notas.remove({"_id": key})
+
+    logger.debug("----- End Random way to get a urls to feed a queue -----")
+
+
+def get_links_notas_empenho(date_start=None, date_end=None, params=None):
+
     url_base = "http://portaltransparencia.gov.br/despesasdiarias/"
     url = url_base + "resultado"
 
-    elapse = timedelta(days=time_elapse)
-
     if not date_start:
-        date_start = date.today() - timedelta(days=30)
+        date_start = date.today()
 
-    datas = [date_start,
-             date_start - elapse if not before else date_start + elapse]
+    if not date_end:
+        date_end = date_start - timedelta(days=30)
 
-    datas.sort()
-    print datas
+    dates = [date_start, date_end]
+    dates.sort()
+    remain_days = dates[0] - dates[1]
+    tmp_date_end = dates[1]
+    if remain_days > 30:
+        dates[1] = date_start - timedelta(days=30)
+        remain_days -= 30
 
-    params = {
-        "periodoInicio": datas[0].strftime(fmt_data),
-        "periodoFim": datas[1].strftime(fmt_data),
-        "fase": "PAG",
-        "codigoOS": 26000,
-        "codigoOrgao": 26231,
-        "codigoUG": "TOD",
-        "codigoED": "TOD",
-        "codigoFavorecido": None,
-        "consulta": "avancada"
-    }
+    if not params:
+        # Default will be search by "Pagamento" of UFAL
+        params = {
+            "fase": "PAG",
+            "codigoOS": 26000,
+            "codigoOrgao": 26231,
+            "codigoUG": "TOD",
+            "codigoED": "TOD",
+            "codigoFavorecido": None,
+            "consulta": "avancada"
+        }
+
+    params.update({
+        "periodoInicio": dates[0].strftime(fmt_data),
+        "periodoFim": dates[1].strftime(fmt_data),
+    })
+
     _id, prx = get_any_proxy()
     try:
         headers = {
@@ -85,7 +107,7 @@ def main(date_start=None, before=False, time_elapse=15):
         for content in tables:
             links = link_match.findall(content)
             links = [url_base + item for item in links]
-            client.set_chunk_url(links)
+            url_dao.set_chunk_url(links)
 
         _url_pg = result.url
         paginas = get_paginator.findall(clean_result(result))
@@ -104,15 +126,18 @@ def main(date_start=None, before=False, time_elapse=15):
                 for content in tables:
                     links = link_match.findall(content)
                     links = [url_base + item for item in links]
-                    client.set_chunk_url(links)
+                    url_dao.set_chunk_url(links)
 
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
         proxy_dao.mark_unused_proxy(_id)
         raise
 
-    print result.url
+    logger.debug(result.url)
+
+    if remain_days >= 1:
+        get_links_notas_empenho(date_start=dates[1], date_end=tmp_date_end)
 
 
 if __name__ == "__main__":
-    main()
+    get_links_notas_empenho()
