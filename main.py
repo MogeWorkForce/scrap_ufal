@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from apscheduler.schedulers.background import BackgroundScheduler
-from scrap_request import load_url_from_queue, get_content_page
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-import time
-import logging
-import traceback
+
 import argparse
+import logging
 import os
+import time
+import traceback
+
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+
+from scrap_request import load_url_from_queue, get_content_page
+from request_range_date import get_random_batch
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -77,17 +81,23 @@ if __name__ == '__main__':
         int(batch) if int(batch) <= 2 else int(round(int(batch) / 2.0)),
         collection="fallback"
     )
+    url_on_finder_urls_notas = lambda: get_random_batch(
+        int(batch) if int(batch) <= 2 else int(round(int(batch) / 4.0)),
+    )
 
     try:
         if not args.ignore:
             visited_links = [url]
             get_content_page(url, visited_links=visited_links)
+        else:
+            get_random_batch(batch_size=2)
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
 
     scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
     scheduler.add_job(url_on_fallback, trigger='interval', seconds=22)
+    scheduler.add_job(url_on_finder_urls_notas, trigger='interval', seconds=27)
     scheduler.start()
 
     try:

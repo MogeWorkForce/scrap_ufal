@@ -6,7 +6,7 @@ import copy
 import logging
 import os
 import random
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
@@ -80,7 +80,7 @@ class DocumentsDao(MongoClient):
 class UrlManagerDao(MongoClient):
     PATTERN_PK = '%Y%m%d'
     PATTERN_PK_MONTH = '%Y%m'
-    LIMIT_DATE_REQUEST = date(2010, 5, 25)
+    LIMIT_DATE_REQUEST = datetime(2010, 5, 25)
 
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
@@ -172,7 +172,7 @@ class UrlManagerDao(MongoClient):
         last_day_of_first_month = calendar.monthrange(
             date_start.year, date_start.month)[1]
 
-        end_month = date(
+        end_month = datetime(
             date_start.year, date_start.month, last_day_of_first_month)
 
         data = {
@@ -195,6 +195,15 @@ class UrlManagerDao(MongoClient):
         except DuplicateKeyError as e:
             logger.error(e)
             logger.debug("Expected error - move on - DuplicateKey")
+
+    def random_finder_urls_notas(self, many_items):
+        instances = self.finder_urls_notas.find()
+        size_instances = instances.count()
+        if size_instances > many_items:
+            random_start = random.randint(0, size_instances)
+            end_batch = random_start+many_items
+            return list(instances)[random_start:end_batch]
+        return instances
 
 
 class ProxiesDao(MongoClient):

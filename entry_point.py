@@ -88,9 +88,8 @@ def status_enqueue(collection):
     }
 
 
-@app.post(NAME_VERSION+"/get_notas_by_parameters/")
-def get_notas_by_parameters():
-
+#@app.post(NAME_VERSION+"/get_notas_by_parameters/")
+#def get_notas_by_parameters():
 
 
 @app.get("/")

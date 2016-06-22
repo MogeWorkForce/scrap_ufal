@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 import requests
 import logging
 import os
-import random
 import re
 
 from datetime import date, timedelta
@@ -32,13 +31,7 @@ formatter = logging.Formatter(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-logger = logging.getLogger("Scrap_Ufal")
 level_debug = logging.DEBUG
-logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
 log_proactive = logging.getLogger("Scrap_Ufal.pro_active")
 log_proactive.setLevel(level_debug)
 
@@ -52,8 +45,8 @@ def clean_result(result):
 
 def get_random_batch(batch_size=5):
     logger.debug("----- Start Random way to get a urls to feed a queue -----")
-    for _ in xrange(batch_size):
-        pay_load = url_dao.random_finder_urls_notas()
+    random_params = url_dao.random_finder_urls_notas(many_items=batch_size)
+    for pay_load in random_params:
         key = pay_load.pop('_id')
         get_links_notas_empenho(**pay_load)
         url_dao.finder_urls_notas.remove({"_id": key})
@@ -74,7 +67,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
 
     dates = [date_start, date_end]
     dates.sort()
-    remain_days = dates[0] - dates[1]
+    remain_days = (dates[0] - dates[1]).days
     tmp_date_end = dates[1]
     if remain_days > 30:
         dates[1] = date_start - timedelta(days=30)
@@ -135,7 +128,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
 
     logger.debug(result.url)
 
-    if remain_days >= 1:
+    if remain_days > 0:
         get_links_notas_empenho(date_start=dates[1], date_end=tmp_date_end)
 
 
