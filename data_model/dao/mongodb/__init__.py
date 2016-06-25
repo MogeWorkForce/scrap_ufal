@@ -227,11 +227,11 @@ class ProxiesDao(MongoClient):
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        now = datetime.now()
+        now = datetime.now() - timedelta(minutes=3, seconds=30)
         list_proxy = list(self.proxies.find({
             'in_use': False,
             "last_date_in_use": {
-                "$lte": int(now.strftime("%Y%m%d%H%M%S")) - 30
+                "$lte": int(now.strftime("%Y%m%d%H%M%S"))
             }
         }))
         if not list_proxy:
@@ -255,3 +255,17 @@ class ProxiesDao(MongoClient):
                                         now.strftime("%Y%m%d%H%M%S"))
                                 }})
         logger.debug('release key(%s)', key)
+
+
+class SystemConfigDao(MongoClient):
+    def __init__(self, *args, **kwargs):
+        super(SystemConfigDao, self).__init__(*args, **kwargs)
+        self.db_system = self.conf_system if MODE in ['DEV', "DOCKER"] else \
+            self[os.environ.get('MONGODB_ADDON_DB')]
+        self.configs = self.db_system.configs
+
+    def get_configs(self):
+        conf = self.configs.find_one({})
+        if not conf:
+            raise Exception('Configs not setted')
+        return conf

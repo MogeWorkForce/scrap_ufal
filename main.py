@@ -6,6 +6,7 @@ import logging
 import os
 import time
 import traceback
+import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
@@ -21,7 +22,7 @@ file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-from data_model.dao.mongodb import ProxiesDao
+from data_model.dao.mongodb import ProxiesDao, SystemConfigDao
 from scrap_request import load_url_from_queue, get_content_page
 from request_range_date import get_random_batch
 
@@ -29,10 +30,17 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'DEV':
     proxy_dao = ProxiesDao()
+    system_configs = SystemConfigDao()
 elif MODE == "DOCKER":
     proxy_dao = ProxiesDao(host='172.17.0.1')
+    system_configs = SystemConfigDao(host='172.17.0.1')
 else:
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+    system_configs = SystemConfigDao(os.environ.get('MONGODB_ADDON_URI'))
+
+
+def manager_queue_job(function, status=True):
+    pass
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
@@ -93,15 +101,23 @@ if __name__ == '__main__':
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
 
-    scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
-    #scheduler.add_job(url_on_fallback, trigger='interval', seconds=22)
-    scheduler.add_job(
+    queue_job = scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
+    fallback_job = scheduler.add_job(url_on_fallback, trigger='interval', seconds=25)
+    finder_urls_notas_job = scheduler.add_job(
         url_on_finder_urls_notas, trigger='interval', minutes=1, seconds=30)
     scheduler.start()
 
     try:
         while True:
-            time.sleep(30)
+            time.sleep(60)
+            config = system_configs.get_configs()
+            system_up = config['system_up']
+
+            queue_active = config['queue']
+            fallback_active = config['fallback']
+            finder_urls_notas_active = config['url_on_finder_urls_notas']
+            if not system_up:
+                sys.exit(0)
 
     except (KeyboardInterrupt, SystemExit):
         proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})

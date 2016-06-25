@@ -137,7 +137,7 @@ def home():
 
 
 def run_app():
-    run(app, host='localhost', port=8080,
+    run(app, host='0.0.0.0', port=8080,
         debug=True, reloader=True, server='gevent')
 
 if __name__ == '__main__':
