@@ -5,6 +5,7 @@ import requests
 import logging
 import os
 import re
+import time
 
 from datetime import date, timedelta
 from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
@@ -41,6 +42,12 @@ def clean_result(result):
 
 def get_random_batch(batch_size=5):
     logger.debug("----- Start Random way to get a urls to feed a queue -----")
+    today = date.today()
+    pk_today = int(today.strftime(url_dao.PATTERN_PK))
+    current_in_progress = url_dao.queue.find_one({"_id": pk_today})
+    if current_in_progress and current_in_progress.get('urls'):
+        return
+
     random_params = url_dao.random_finder_urls_notas(many_items=batch_size)
     for pay_load in random_params:
         key = pay_load.pop('_id')
@@ -87,43 +94,57 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
     })
 
     _id, prx = get_any_proxy()
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; '
+                      '+http://www.google.com/bot.html)'
+    }
     try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        }
-        result = requests.get(url, params=params, headers=headers, proxies=prx)
+        result = requests.get(
+            url, params=params, headers=headers, proxies=prx, timeout=10)
         tables = match.findall(clean_result(result))
         for content in tables:
             links = link_match.findall(content)
             links = [url_base + item for item in links]
             url_dao.set_chunk_url(links)
 
-        _url_pg = result.url
-        paginas = get_paginator.findall(clean_result(result))
-        end_link_paginator = '&pagina=%s#paginacao'
-
-        for pg in paginas[:1]:
-            _, end = pg
-            for next_pg in xrange(1, int(end) + 1):
-                if next_pg == 1:
-                    continue
-                else:
-                    link_ = _url_pg + end_link_paginator % next_pg
-
-                logger.debug(link_)
-                result = requests.get(link_, headers=headers, proxies=prx)
-                tables = match.findall(clean_result(result))
-                for content in tables:
-                    links = link_match.findall(content)
-                    links = [url_base + item for item in links]
-                    url_dao.set_chunk_url(links)
-
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
         proxy_dao.mark_unused_proxy(_id)
         raise
 
+    _url_pg = result.url
+    paginas = get_paginator.findall(clean_result(result))
+    end_link_paginator = '&pagina=%s#paginacao'
+
+    for pg in paginas[:1]:
+        _, end = pg
+        for next_pg in xrange(1, int(end) + 1):
+            if next_pg == 1:
+                continue
+            else:
+                link_ = _url_pg + end_link_paginator % next_pg
+
+            logger.debug(link_)
+            if "captcha" in link_:
+                raise Exception("This thread on captcha page")
+            time.sleep(4)
+            _id, prx = get_any_proxy()
+            try:
+                result = requests.get(
+                    link_, headers=headers, proxies=prx, timeout=10)
+                tables = match.findall(clean_result(result))
+                for content in tables:
+                    links = link_match.findall(content)
+                    links = [url_base + item for item in links]
+                    url_dao.set_chunk_url(links)
+                proxy_dao.mark_unused_proxy(_id)
+            except Exception:
+                proxy_dao.mark_unused_proxy(_id)
+                raise
+
     logger.debug(result.url)
+    if "captcha" in result.url:
+        raise Exception("This thread on captcha page")
 
     if remain_days > 0:
         get_links_notas_empenho(date_start=dates[1], date_end=tmp_date_end)

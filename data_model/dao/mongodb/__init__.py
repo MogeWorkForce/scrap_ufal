@@ -11,7 +11,6 @@ from datetime import date, timedelta, datetime
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
-
 MODE = os.environ.get('MODE', 'DEV')
 
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
@@ -49,7 +48,7 @@ class DocumentsDao(MongoClient):
             url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                doc['geral_data']['num_doc']
+                    doc['geral_data']['num_doc']
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -73,7 +72,7 @@ class DocumentsDao(MongoClient):
                 "valor_rs": float(tmp_docs["valor_rs"][i]) if
                 tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
-        ]
+            ]
         return doc
 
 
@@ -163,7 +162,7 @@ class UrlManagerDao(MongoClient):
 
     def add_period_to_recover_in_portal(self, date_start, month_elapse,
                                         params_search=None):
-        #TODO: Change this name in future
+        # TODO: Change this name in future
         key = {"_id": int(date_start.strftime(self.PATTERN_PK_MONTH))}
 
         if date_start < self.LIMIT_DATE_REQUEST:
@@ -184,11 +183,12 @@ class UrlManagerDao(MongoClient):
 
         if month_elapse > 1:
             new_start_date = end_month + timedelta(days=1)
-            self.add_period_to_recover_in_portal(new_start_date, month_elapse-1)
+            self.add_period_to_recover_in_portal(new_start_date,
+                                                 month_elapse - 1)
 
     def insert_url_finder(self, data, params=None):
         try:
-            if params and isinstance(params, (dict, )):
+            if params and isinstance(params, (dict,)):
                 params = {}
             data.update({'params': params})
             self.finder_urls_notas.insert(data)
@@ -201,13 +201,12 @@ class UrlManagerDao(MongoClient):
         size_instances = instances.count()
         if size_instances > many_items:
             random_start = random.randint(0, size_instances)
-            end_batch = random_start+many_items
+            end_batch = random_start + many_items
             return list(instances)[random_start:end_batch]
         return instances
 
 
 class ProxiesDao(MongoClient):
-
     def __init__(self, *args, **kwargs):
         super(ProxiesDao, self).__init__(*args, **kwargs)
         self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
@@ -224,11 +223,17 @@ class ProxiesDao(MongoClient):
                 'proxy': x['proxy'],
                 'localization': x['localization']
             } for x in list_proxy
-        ]
+            ]
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        list_proxy = list(self.proxies.find({'in_use': False}))
+        now = datetime.now()
+        list_proxy = list(self.proxies.find({
+            'in_use': False,
+            "last_date_in_use": {
+                "$lte": int(now.strftime("%Y%m%d%H%M%S")) - 30
+            }
+        }))
         if not list_proxy:
             raise Exception('No one proxy is free in this moment')
 
@@ -242,5 +247,11 @@ class ProxiesDao(MongoClient):
         return proxy
 
     def mark_unused_proxy(self, key):
-        self.proxies.update_one({"_id": key}, {"$set": {"in_use": False}})
+        now = datetime.now()
+        self.proxies.update_one({"_id": key},
+                                {"$set": {
+                                    "in_use": False,
+                                    "last_date_in_use": int(
+                                        now.strftime("%Y%m%d%H%M%S"))
+                                }})
         logger.debug('release key(%s)', key)
