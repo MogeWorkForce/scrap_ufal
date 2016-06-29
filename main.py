@@ -80,7 +80,7 @@ if __name__ == '__main__':
         logger=logScheduller, executors=executors, job_defaults=job_defaults)
     # scheduler._logger.setLevel(logging.WARNING)
 
-    proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})
+    proxy_dao.release_all_proxies()
     url = args.url
     batch = args.batch
 
@@ -102,10 +102,14 @@ if __name__ == '__main__':
         logger.debug("Error on load content on url passed")
 
     queue_job = scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
-    fallback_job = scheduler.add_job(url_on_fallback, trigger='interval', seconds=25)
+    fallback_job = scheduler.add_job(
+        url_on_fallback, trigger='interval', seconds=25)
     finder_urls_notas_job = scheduler.add_job(
         url_on_finder_urls_notas, trigger='interval', minutes=1, seconds=30)
     scheduler.start()
+
+    fallback_job.modify(max_instances=1)
+    finder_urls_notas_job.modify(max_instances=1)
 
     try:
         while True:
@@ -120,5 +124,5 @@ if __name__ == '__main__':
                 sys.exit(0)
 
     except (KeyboardInterrupt, SystemExit):
-        proxy_dao.proxies.update_many({}, {"$set": {"in_use": False}})
+        proxy_dao.release_all_proxies()
         scheduler.shutdown()

@@ -112,6 +112,7 @@ def cleaned_content(url, visited_links, proxy):
     headers = {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
     }
+    headers = {}
     logger.debug(proxy)
     result = requests.get(url, timeout=10, headers=headers, proxies=proxy)
     visited_links.append(url)
@@ -136,12 +137,8 @@ def get_content_page(url, visited_links=None, data=None):
         no_spaces = result
         data = load_content(no_spaces, paginator, data, visited_links)
         proxy_dao.mark_unused_proxy(_id)
-    except KeyError:
-        proxy_dao.mark_unused_proxy(_id)
-        time.sleep(3)
-        raise
     except Exception:
-        proxy_dao.mark_unused_proxy(_id)
+        proxy_dao.mark_unused_proxy(_id, error=True)
         raise
 
     return data
@@ -331,12 +328,8 @@ def get_paginator_content(content_original, data, visited_links):
                         data=data, visited_links=visited_links
                     )
                     proxy_dao.mark_unused_proxy(_id)
-                except KeyError:
-                    proxy_dao.mark_unused_proxy(_id)
-                    time.sleep(3)
-                    raise
                 except Exception:
-                    proxy_dao.mark_unused_proxy(_id)
+                    proxy_dao.mark_unused_proxy(_id, error=True)
                     raise
     return data
 

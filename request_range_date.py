@@ -45,7 +45,11 @@ def get_random_batch(batch_size=5):
     today = date.today()
     pk_today = int(today.strftime(url_dao.PATTERN_PK))
     current_in_progress = url_dao.queue.find_one({"_id": pk_today})
+    current_in_fallback = url_dao.fallback.find_one({"_id": pk_today})
+
     if current_in_progress and current_in_progress.get('urls'):
+        return
+    if current_in_fallback and current_in_fallback.get('urls'):
         return
 
     random_params = url_dao.random_finder_urls_notas(many_items=batch_size)
@@ -98,6 +102,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; '
                       '+http://www.google.com/bot.html)'
     }
+    headers = {}
     try:
         result = requests.get(
             url, params=params, headers=headers, proxies=prx, timeout=10)
@@ -109,7 +114,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
 
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
-        proxy_dao.mark_unused_proxy(_id)
+        proxy_dao.mark_unused_proxy(_id, error=True)
         raise
 
     _url_pg = result.url
@@ -139,7 +144,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
                     url_dao.set_chunk_url(links)
                 proxy_dao.mark_unused_proxy(_id)
             except Exception:
-                proxy_dao.mark_unused_proxy(_id)
+                proxy_dao.mark_unused_proxy(_id, error=True)
                 raise
 
     logger.debug(result.url)

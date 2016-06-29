@@ -48,7 +48,7 @@ class DocumentsDao(MongoClient):
             url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                    doc['geral_data']['num_doc']
+                doc['geral_data']['num_doc']
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -72,7 +72,7 @@ class DocumentsDao(MongoClient):
                 "valor_rs": float(tmp_docs["valor_rs"][i]) if
                 tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
-            ]
+        ]
         return doc
 
 
@@ -207,11 +207,13 @@ class UrlManagerDao(MongoClient):
 
 
 class ProxiesDao(MongoClient):
+
     def __init__(self, *args, **kwargs):
         super(ProxiesDao, self).__init__(*args, **kwargs)
         self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
             self[os.environ.get('MONGODB_ADDON_DB')]
         self.proxies = self.db_proxy.proxies
+        self.error_proxies = self.db_proxy.error_proxies
 
     def insert_proxies(self, list_proxy):
         if not isinstance(list_proxy, (list, tuple)):
@@ -223,11 +225,11 @@ class ProxiesDao(MongoClient):
                 'proxy': x['proxy'],
                 'localization': x['localization']
             } for x in list_proxy
-            ]
+        ]
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        now = datetime.now() - timedelta(minutes=3, seconds=30)
+        now = datetime.now() - timedelta(minutes=10, seconds=30)
         list_proxy = list(self.proxies.find({
             'in_use': False,
             "last_date_in_use": {
@@ -246,7 +248,7 @@ class ProxiesDao(MongoClient):
         logger.debug(proxy)
         return proxy
 
-    def mark_unused_proxy(self, key):
+    def mark_unused_proxy(self, key, error=False):
         now = datetime.now()
         self.proxies.update_one({"_id": key},
                                 {"$set": {
@@ -255,9 +257,23 @@ class ProxiesDao(MongoClient):
                                         now.strftime("%Y%m%d%H%M%S"))
                                 }})
         logger.debug('release key(%s)', key)
+        if error:
+            proxy_error = self.proxies.find_one({"_id": key})
+            self.error_proxies.insert_one({'payload': proxy_error})
+
+    def release_all_proxies(self):
+        now = datetime.now()
+        self.proxies.update_many({"in_use": True},
+                                 {"$set": {
+                                     "in_use": False,
+                                     "last_date_in_use": int(
+                                         now.strftime("%Y%m%d%H%M%S"))
+                                 }})
+        logger.debug('release key all proxies')
 
 
 class SystemConfigDao(MongoClient):
+
     def __init__(self, *args, **kwargs):
         super(SystemConfigDao, self).__init__(*args, **kwargs)
         self.db_system = self.conf_system if MODE in ['DEV', "DOCKER"] else \
