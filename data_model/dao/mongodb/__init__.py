@@ -106,14 +106,15 @@ class UrlManagerDao(MongoClient):
             self.db_urls.queue.insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
-            logger.debug("Expected error - move on addToSet - DuplicateKey")
+            logger.debug(
+                "Expected error - move on addToSet - Queue - DuplicateKey")
 
         if not skip:
             try:
                 self.queue.update_one(key, data)
             except DuplicateKeyError as e:
                 logger.error(e)
-                logger.debug("move on - DuplicateKey")
+                logger.debug("move on - DuplicateKey - Queue")
 
     def dynamic_url(self, collection, url):
         date_ = date.today()
@@ -130,14 +131,16 @@ class UrlManagerDao(MongoClient):
             self.db_urls[collection].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
-            logger.debug("Expected error - move on - DuplicateKey")
+            logger.debug(
+                "Expected error - move on - %s - DuplicateKey", collection.capitalize())
 
         if not skip:
             try:
                 self.db_urls[collection].update_one(key, data)
             except DuplicateKeyError as e:
                 logger.error(e)
-                logger.debug("move on - DuplicateKey")
+                logger.debug(
+                    "move on -  %s - DuplicateKey", collection.capitalize())
 
     def remove_urls(self, list_urls, collection='queue'):
         date_ = date.today()
@@ -194,7 +197,7 @@ class UrlManagerDao(MongoClient):
             self.finder_urls_notas.insert(data)
         except DuplicateKeyError as e:
             logger.error(e)
-            logger.debug("Expected error - move on - DuplicateKey")
+            logger.debug("DuplicateKey on - %s", 'Finder Urls Notas')
 
     def random_finder_urls_notas(self, many_items):
         instances = self.finder_urls_notas.find()
@@ -239,13 +242,11 @@ class ProxiesDao(MongoClient):
         if not list_proxy:
             raise Exception('No one proxy is free in this moment')
 
-        chosed_proxy = random.randrange(0, len(list_proxy))
-        logger.debug("Proxy choised your index are: %d", chosed_proxy)
-        proxy = list_proxy[chosed_proxy]
+        proxy = random.choice(list_proxy)
+        logger.debug("Random Proxy choised are: %s", proxy)
 
         self.proxies.update_one(
             {"_id": proxy['_id']}, {"$set": {"in_use": True}})
-        logger.debug(proxy)
         return proxy
 
     def mark_unused_proxy(self, key, error=False):
@@ -269,7 +270,7 @@ class ProxiesDao(MongoClient):
                                      "last_date_in_use": int(
                                          now.strftime("%Y%m%d%H%M%S"))
                                  }})
-        logger.debug('release key all proxies')
+        logger.debug('Release key all proxies')
 
 
 class SystemConfigDao(MongoClient):
@@ -283,5 +284,5 @@ class SystemConfigDao(MongoClient):
     def get_configs(self):
         conf = self.configs.find_one({})
         if not conf:
-            raise Exception('Configs not setted')
+            raise Exception('Configs are not setted')
         return conf
