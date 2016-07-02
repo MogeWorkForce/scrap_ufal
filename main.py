@@ -121,6 +121,8 @@ if __name__ == '__main__':
             fallback_active = config['fallback']
             finder_urls_notas_active = config['url_on_finder_urls_notas']
             if not system_up:
+                logScheduller.warning(
+                    "The Jobs will be shutdown in few moments")
                 sys.exit(0)
 
     except (KeyboardInterrupt, SystemExit):

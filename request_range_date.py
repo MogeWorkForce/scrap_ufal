@@ -98,14 +98,9 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
     })
 
     _id, prx = get_any_proxy()
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; '
-                      '+http://www.google.com/bot.html)'
-    }
-    headers = {}
     try:
         result = requests.get(
-            url, params=params, headers=headers, proxies=prx, timeout=10)
+            url, params=params, proxies=prx, timeout=10)
         tables = match.findall(clean_result(result))
         for content in tables:
             links = link_match.findall(content)

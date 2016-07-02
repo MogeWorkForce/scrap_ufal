@@ -109,12 +109,8 @@ def get_general_data(url, data=None):
 def cleaned_content(url, visited_links, proxy):
     time.sleep(4.1)
     logger.debug((len(visited_links), url))
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-    }
-    headers = {}
     logger.debug(proxy)
-    result = requests.get(url, timeout=10, headers=headers, proxies=proxy)
+    result = requests.get(url, timeout=10, proxies=proxy)
     visited_links.append(url)
 
     no_spaces = clean_result(result)
