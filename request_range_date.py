@@ -131,7 +131,7 @@ def get_links_notas_empenho(date_start=None, date_end=None, params=None):
             _id, prx = get_any_proxy()
             try:
                 result = requests.get(
-                    link_, headers=headers, proxies=prx, timeout=10)
+                    link_, proxies=prx, timeout=10)
                 tables = match.findall(clean_result(result))
                 for content in tables:
                     links = link_match.findall(content)
