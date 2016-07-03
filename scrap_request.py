@@ -43,15 +43,12 @@ match_tr_subtable = re.compile(
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    client = DocumentsDao()
-    proxy_dao = ProxiesDao()
-elif MODE == "DOCKER":
-    client = DocumentsDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    client = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 
 start_ = time.time()
 

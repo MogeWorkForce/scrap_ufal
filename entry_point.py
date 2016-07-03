@@ -36,18 +36,14 @@ VERSION = "v1"
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    client = UrlManagerDao()
-    documents = DocumentsDao()
-    proxy_dao = ProxiesDao()
-elif MODE == "DOCKER":
-    client = UrlManagerDao(host='172.17.0.1')
-    documents = DocumentsDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
     documents = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    client = UrlManagerDao(host='172.17.0.1')
+    documents = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 
@@ -88,8 +84,9 @@ def status_enqueue(collection):
     }
 
 
-#@app.post(NAME_VERSION+"/get_notas_by_parameters/")
-#def get_notas_by_parameters():
+@app.get(NAME_VERSION+"status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
+def count_documents_last_days(start, end):
+    return "%s - %s\n" % (start, end)
 
 
 @app.get("/")

@@ -33,8 +33,10 @@ class DocumentsDao(MongoClient):
 
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
-        self.db_empenho = self.notas_empenho if MODE in ['DEV', "DOCKER"] else \
-            self[os.environ.get('MONGODB_ADDON_DB')]
+        if MODE == "PROD":
+            self.db_empenho = self[os.environ['MONGODB_ADDON_DB']]
+        else:
+            self.db_empenho = self.notas_empenho
         self.documents = self.db_empenho.documents
         self.url = UrlManagerDao(*args, **kwargs)
 
@@ -100,9 +102,10 @@ class UrlManagerDao(MongoClient):
 
     def __init__(self, *args, **kwargs):
         super(UrlManagerDao, self).__init__(*args, **kwargs)
-        self.db_urls = self.urls if MODE in ['DEV', "DOCKER"] else self[
-            os.environ.get('MONGODB_ADDON_DB')
-        ]
+        if MODE == "PROD":
+            self.db_urls = self[os.environ['MONGODB_ADDON_DB']]
+        else:
+            self.db_urls = self.urls
         self.queue = self.db_urls.queue
         self.fallback = self.db_urls.fallback
         self.finder_urls_notas = self.db_urls.finder_urls_notas
@@ -230,8 +233,10 @@ class UrlManagerDao(MongoClient):
 class ProxiesDao(MongoClient):
     def __init__(self, *args, **kwargs):
         super(ProxiesDao, self).__init__(*args, **kwargs)
-        self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
-            self[os.environ.get('MONGODB_ADDON_DB')]
+        if MODE == "PROD":
+            self.db_proxy = self[os.environ['MONGODB_ADDON_DB']]
+        else:
+            self.db_proxy = self.proxy
         self.proxies = self.db_proxy.proxies
         self.error_proxies = self.db_proxy.error_proxies
 
@@ -293,8 +298,10 @@ class ProxiesDao(MongoClient):
 class SystemConfigDao(MongoClient):
     def __init__(self, *args, **kwargs):
         super(SystemConfigDao, self).__init__(*args, **kwargs)
-        self.db_system = self.conf_system if MODE in ['DEV', "DOCKER"] else \
-            self[os.environ.get('MONGODB_ADDON_DB')]
+        if MODE == "PROD":
+            self.db_system = self[os.environ['MONGODB_ADDON_DB']]
+        else:
+            self.db_system = self.conf_system
         self.configs = self.db_system.configs
 
     def get_configs(self):

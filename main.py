@@ -28,15 +28,12 @@ from request_range_date import get_random_batch
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    proxy_dao = ProxiesDao()
-    system_configs = SystemConfigDao()
-elif MODE == "DOCKER":
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-    system_configs = SystemConfigDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
     system_configs = SystemConfigDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    proxy_dao = ProxiesDao(host='172.17.0.1')
+    system_configs = SystemConfigDao(host='172.17.0.1')
 
 
 def manager_queue_job(function, status=True):

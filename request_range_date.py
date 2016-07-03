@@ -13,15 +13,13 @@ from scrap_request import get_any_proxy
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    url_dao = UrlManagerDao()
-    proxy_dao = ProxiesDao()
-elif MODE == "DOCKER":
-    url_dao = UrlManagerDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     url_dao = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    url_dao = UrlManagerDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
+
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
