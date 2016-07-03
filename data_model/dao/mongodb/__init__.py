@@ -29,6 +29,7 @@ logger.debug('-' * 30)
 
 class DocumentsDao(MongoClient):
     PATTERN_PK = '%Y%m%d'
+    NOT_ALLOWED_CLEAN = ('documentos_relacionados',)
 
     def __init__(self, *args, **kwargs):
         super(DocumentsDao, self).__init__(*args, **kwargs)
@@ -48,7 +49,7 @@ class DocumentsDao(MongoClient):
             url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
                 'session'] + "/"
             url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                doc['geral_data']['num_doc']
+                    doc['geral_data']['num_doc']
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -72,8 +73,24 @@ class DocumentsDao(MongoClient):
                 "valor_rs": float(tmp_docs["valor_rs"][i]) if
                 tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
-        ]
+            ]
+        doc = self.remove_list(doc)
         return doc
+
+    def remove_list(self, doc):
+        tmp_doc = {}
+        for key, value in doc.iteritems():
+            if key in self.NOT_ALLOWED_CLEAN:
+                tmp_doc[key] = value
+                continue
+            new_value = None
+            if isinstance(value, (dict,)):
+                new_value = self.remove_list(value)
+            elif isinstance(value, (list, tuple, set)):
+                new_value = value[0] if len(value) == 1 else value
+            tmp_doc[key] = new_value if new_value else value
+
+        return tmp_doc
 
 
 class UrlManagerDao(MongoClient):
@@ -132,7 +149,8 @@ class UrlManagerDao(MongoClient):
             skip = True
         except DuplicateKeyError as e:
             logger.debug(
-                "Expected error - move on - %s - DuplicateKey", collection.capitalize())
+                "Expected error - move on - %s - DuplicateKey",
+                collection.capitalize())
 
         if not skip:
             try:
@@ -210,7 +228,6 @@ class UrlManagerDao(MongoClient):
 
 
 class ProxiesDao(MongoClient):
-
     def __init__(self, *args, **kwargs):
         super(ProxiesDao, self).__init__(*args, **kwargs)
         self.db_proxy = self.proxy if MODE in ['DEV', "DOCKER"] else \
@@ -228,7 +245,7 @@ class ProxiesDao(MongoClient):
                 'proxy': x['proxy'],
                 'localization': x['localization']
             } for x in list_proxy
-        ]
+            ]
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
@@ -274,7 +291,6 @@ class ProxiesDao(MongoClient):
 
 
 class SystemConfigDao(MongoClient):
-
     def __init__(self, *args, **kwargs):
         super(SystemConfigDao, self).__init__(*args, **kwargs)
         self.db_system = self.conf_system if MODE in ['DEV', "DOCKER"] else \
