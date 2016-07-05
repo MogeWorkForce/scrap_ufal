@@ -98,13 +98,14 @@ def home():
     result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
     result_fallback = client.db_urls['fallback'].find_one(key)
 
-    documents_total = documents.documents.count()
-    empenho = documents.documents.find(
-        {"dados_basicos.fase": "Empenho"}).count()
-    pagamento = documents.documents.find(
-        {"dados_basicos.fase": "Pagamento"}).count()
-    liquidacao = documents.documents.find(
-        {"dados_basicos.fase": "Liquidação"}).count()
+    pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
+                {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
+
+    documents_extrato = documents.documents.aggregate(pipeline)
+    result_docs = {'Total': 0}
+    for item in documents_extrato:
+        result_docs[item['_id']] = item['total']
+        result_docs['Total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
     proxies_avaible = proxy_dao.proxies.find({"in_use": False}).count()
@@ -115,12 +116,7 @@ def home():
             "queue_loaded": len(result_queue_loaded['urls']) if result_queue_loaded else 0,
             "fallback": len(result_fallback['urls']) if result_fallback else 0
         },
-        "documents": {
-            "total": documents_total,
-            "empenho": empenho,
-            "pagamento": pagamento,
-            "liquidacao": liquidacao,
-        },
+        "documents": result_docs,
         "proxies": {
             "in_use": proxies_in_use,
             "avaible": proxies_avaible
