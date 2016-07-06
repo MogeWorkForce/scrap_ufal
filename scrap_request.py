@@ -43,15 +43,12 @@ match_tr_subtable = re.compile(
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    client = DocumentsDao()
-    proxy_dao = ProxiesDao()
-elif MODE == "DOCKER":
-    client = DocumentsDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    client = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 
 start_ = time.time()
 
@@ -109,11 +106,8 @@ def get_general_data(url, data=None):
 def cleaned_content(url, visited_links, proxy):
     time.sleep(4.1)
     logger.debug((len(visited_links), url))
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-    }
     logger.debug(proxy)
-    result = requests.get(url, timeout=10, headers=headers, proxies=proxy)
+    result = requests.get(url, timeout=10, proxies=proxy)
     visited_links.append(url)
 
     no_spaces = clean_result(result)
@@ -136,12 +130,8 @@ def get_content_page(url, visited_links=None, data=None):
         no_spaces = result
         data = load_content(no_spaces, paginator, data, visited_links)
         proxy_dao.mark_unused_proxy(_id)
-    except KeyError:
-        proxy_dao.mark_unused_proxy(_id)
-        time.sleep(3)
-        raise
     except Exception:
-        proxy_dao.mark_unused_proxy(_id)
+        proxy_dao.mark_unused_proxy(_id, error=True)
         raise
 
     return data
@@ -331,12 +321,8 @@ def get_paginator_content(content_original, data, visited_links):
                         data=data, visited_links=visited_links
                     )
                     proxy_dao.mark_unused_proxy(_id)
-                except KeyError:
-                    proxy_dao.mark_unused_proxy(_id)
-                    time.sleep(3)
-                    raise
                 except Exception:
-                    proxy_dao.mark_unused_proxy(_id)
+                    proxy_dao.mark_unused_proxy(_id, error=True)
                     raise
     return data
 
@@ -377,12 +363,12 @@ def load_url_from_queue(batch=1, collection='queue'):
                     logger.debug('Start load url_from %s! %s',
                                  collection.upper(), url)
                     get_content_page(url, visited_links=visited_link)
-                    client.url.dinamic_url('queue_loaded', url)
+                    client.url.dynamic_url('queue_loaded', url)
                 else:
                     logger.warning("Url already loaded: %s", url)
             except:
                 traceback.print_exc()
-                client.url.dinamic_url('fallback', url)
+                client.url.dynamic_url('fallback', url)
                 logger.warning("Call Fallback to Url: %s", url)
 
         try:
