@@ -36,18 +36,14 @@ VERSION = "v1"
 
 MODE = os.environ.get('MODE', 'DEV')
 
-if MODE == 'DEV':
-    client = UrlManagerDao()
-    documents = DocumentsDao()
-    proxy_dao = ProxiesDao()
-elif MODE == "DOCKER":
-    client = UrlManagerDao(host='172.17.0.1')
-    documents = DocumentsDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-else:
+if MODE == 'PROD':
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
     documents = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
+else:
+    client = UrlManagerDao(host='172.17.0.1')
+    documents = DocumentsDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao(host='172.17.0.1')
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 
@@ -88,6 +84,11 @@ def status_enqueue(collection):
     }
 
 
+@app.get(NAME_VERSION+"status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
+def count_documents_last_days(start, end):
+    return "%s - %s\n" % (start, end)
+
+
 @app.get("/")
 def home():
     start = time.time()
@@ -97,13 +98,14 @@ def home():
     result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
     result_fallback = client.db_urls['fallback'].find_one(key)
 
-    documents_total = documents.documents.count()
-    empenho = documents.documents.find(
-        {"dados_basicos.fase": "Empenho"}).count()
-    pagamento = documents.documents.find(
-        {"dados_basicos.fase": "Pagamento"}).count()
-    liquidacao = documents.documents.find(
-        {"dados_basicos.fase": "Liquidação"}).count()
+    pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
+                {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
+
+    documents_extrato = documents.documents.aggregate(pipeline)
+    result_docs = {'Total': 0}
+    for item in documents_extrato:
+        result_docs[item['_id']] = item['total']
+        result_docs['Total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
     proxies_avaible = proxy_dao.proxies.find({"in_use": False}).count()
@@ -114,12 +116,7 @@ def home():
             "queue_loaded": len(result_queue_loaded['urls']) if result_queue_loaded else 0,
             "fallback": len(result_fallback['urls']) if result_fallback else 0
         },
-        "documents": {
-            "total": documents_total,
-            "empenho": empenho,
-            "pagamento": pagamento,
-            "liquidacao": liquidacao,
-        },
+        "documents": result_docs,
         "proxies": {
             "in_use": proxies_in_use,
             "avaible": proxies_avaible
@@ -133,7 +130,7 @@ def home():
 
 
 def run_app():
-    run(app, host='localhost', port=8080,
+    run(app, host='0.0.0.0', port=8080,
         debug=True, reloader=True, server='gevent')
 
 if __name__ == '__main__':
