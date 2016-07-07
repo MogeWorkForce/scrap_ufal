@@ -62,9 +62,10 @@ if __name__ == '__main__':
         'processpool': ProcessPoolExecutor(5),
     }
 
+    num_jobs = os.environ.get('NUMBER_JOBS')
     job_defaults = {
         'coalesce': False,
-        'max_instances': int(args.jobs) if os.environ.get('NUMBER_JOBS') else 3
+        'max_instances': int(num_jobs) if num_jobs else 3
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
