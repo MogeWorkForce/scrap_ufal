@@ -48,10 +48,10 @@ class DocumentsDao(MongoClient):
             doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
             self.documents.replace_one(key, doc, upsert=upsert)
             logger.debug(('save:', key))
-            url_ = doc['geral_data']['url_base'] + '/' + doc['geral_data'][
-                'session'] + "/"
-            url_ += doc['geral_data']['type_doc'] + '?documento=' + \
-                    doc['geral_data']['num_doc']
+            url_ = doc['geral_data']['url_base'] + '/'
+            url_ += doc['geral_data']['session'] + "/"
+            url_ += doc['geral_data']['type_doc']
+            url_ += '?documento=' + doc['geral_data']['num_doc']
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
@@ -254,17 +254,18 @@ class ProxiesDao(MongoClient):
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
+        random_skip = random.randint(0, 682)
         now = datetime.now() - timedelta(minutes=10, seconds=30)
-        list_proxy = list(self.proxies.find({
+        list_proxy = self.proxies.find({
             'in_use': False,
             "last_date_in_use": {
                 "$lte": int(now.strftime("%Y%m%d%H%M%S"))
             }
-        }))
+        }).skip(random_skip).limit(1)
         if not list_proxy:
             raise Exception('No one proxy is free in this moment')
 
-        proxy = random.choice(list_proxy)
+        proxy = list_proxy[0]
         logger.debug("Random Proxy choised are: %s", proxy)
 
         self.proxies.update_one(
