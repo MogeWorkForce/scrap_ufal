@@ -254,7 +254,7 @@ class ProxiesDao(MongoClient):
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        random_skip = random.randint(0, 682)
+        random_skip = random.randint(0, 200)
         now = datetime.now() - timedelta(minutes=10, seconds=30)
         list_proxy = self.proxies.find({
             'in_use': False,
