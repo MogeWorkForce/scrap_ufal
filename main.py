@@ -50,9 +50,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--ignore', action="store_true",
                         help="Ignore url passed")
 
-    parser.add_argument('-j', '--jobs', type=int, choices=range(1, 31),
-                        help="How many instance you want start")
-
     args = parser.parse_args()
     if not args.ignore:
         if not args.url:
@@ -65,9 +62,10 @@ if __name__ == '__main__':
         'processpool': ProcessPoolExecutor(5),
     }
 
+    num_jobs = os.environ.get('NUMBER_JOBS')
     job_defaults = {
         'coalesce': False,
-        'max_instances': int(args.jobs) if args.jobs else 3
+        'max_instances': int(num_jobs) if num_jobs else 3
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
