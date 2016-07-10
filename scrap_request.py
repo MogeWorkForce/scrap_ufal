@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from unicodedata import normalize
+
 from data_model.dao.mongodb import DocumentsDao, ProxiesDao
 import requests
 import re
@@ -11,6 +11,7 @@ import argparse
 import os
 
 from datetime import date
+from utils import clean_result, normalize_text
 
 logger = logging.getLogger("Scrap_Ufal.scraper")
 level_debug = logging.DEBUG
@@ -73,17 +74,6 @@ def try_numeric(value):
     except ValueError:
         pass
     return value
-
-
-def _normalize_text(txt, codif='utf-8'):
-    if isinstance(txt, str):
-        txt = txt.decode(codif, "ignore")
-    return normalize('NFKD', txt).encode('ASCII', 'ignore'). \
-        replace(" ", "_"). \
-        replace(':', ''). \
-        replace("(", ""). \
-        replace(")", ""). \
-        replace("$", "s").lower()
 
 
 def get_general_data(url, data=None):
@@ -157,7 +147,7 @@ def load_content(content_original, paginator=False, data=None,
             for z, item in enumerate(match_content.finditer(line_)):
                 content_value = item.group('content').strip()
                 if class_tr_sub in ('cabecalho',):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     subtable_headers.append(content_value)
                     content_[subtable_headers[-1]] = {}
@@ -209,7 +199,7 @@ def load_content(content_original, paginator=False, data=None,
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
                 if class_tr in ('cabecalho', 'titulo'):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     last_key_tr = content_value
                     head.append(last_key_tr)
@@ -228,7 +218,7 @@ def load_content(content_original, paginator=False, data=None,
                     duo_rotulo = False
 
                 if class_content and class_content in ('rotulo'):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     last_key_th = content_value
                     sub_head.append(last_key_th)
@@ -289,11 +279,6 @@ def load_content(content_original, paginator=False, data=None,
     client.url.set_chunk_url(docs_relacionados)
 
     return data
-
-
-def clean_result(result):
-    return result.text.replace('\n', '').replace(
-        '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
 
 
 def get_paginator_content(content_original, data, visited_links):

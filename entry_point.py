@@ -104,10 +104,7 @@ def home():
     documents_extrato = documents.documents.aggregate(pipeline)
     result_docs = {'Total': 0}
     for item in documents_extrato:
-        if isinstance(item['_id'], (list, tuple)):
-            result_docs[item['_id'][0]] = item['total']
-        else:
-            result_docs[item['_id']] = item['total']
+        result_docs[item['_id']] = item['total']
         result_docs['Total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
@@ -122,7 +119,7 @@ def home():
         "documents": result_docs,
         "proxies": {
             "in_use": proxies_in_use,
-            "avaible": proxies_avaible
+            "available": proxies_avaible
         }
     }
     return_msg = json.dumps(result, indent=3)

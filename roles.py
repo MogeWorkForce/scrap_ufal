@@ -30,7 +30,7 @@ else:
     docs_dao = DocumentsDao(host='172.17.0.1')
 
 
-def wrong_bidding_mode():
+def analysis_bidding_mode():
     # 0 - carregar as regras
     # 1 - Selecionar a nota de empenho de acordo com as regras
     # 2 - Checkar se a modalidade é consistente com a faixa de valores
@@ -62,4 +62,4 @@ def wrong_bidding_mode():
     logger_data_analysis.debug("We found this errors: %s",
                                json.dumps(error_founded))
 if __name__ == "__main__":
-    wrong_bidding_mode()
+    analysis_bidding_mode()
