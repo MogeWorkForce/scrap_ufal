@@ -6,6 +6,8 @@ import logging
 import os
 
 from collections import defaultdict
+from datetime import datetime
+from .utils import normalize_text
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -21,13 +23,22 @@ logger.addHandler(file_handler)
 logger_data_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_data_analysis.setLevel(level_debug)
 
-from data_model.dao.mongodb import DocumentsDao
+from .data_model.dao.mongodb import DocumentsDao
 
 MODE = os.environ.get('MODE')
 if MODE == 'PROD':
     docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    docs_dao = DocumentsDao(host='172.17.0.1')
+    #docs_dao = DocumentsDao(host='172.17.0.1')
+    docs_dao = DocumentsDao()
+
+BIDDING_NOT_FOUND = 22
+WRONG_BIDDING = 23
+
+ERROR_TYPE = {
+    BIDDING_NOT_FOUND: "Bidding mode not found",
+    WRONG_BIDDING: "Wrong bidding mode",
+}
 
 
 def analysis_bidding_mode():
@@ -46,20 +57,52 @@ def analysis_bidding_mode():
             if isinstance(mod_licitacao, (tuple, list)):
                 mod_licitacao = mod_licitacao[0]
 
+            error_this_doc = []
             logger_data_analysis.debug(mod_licitacao)
             logger_data_analysis.debug(doc['geral_data']['url'])
 
-            if mod_licitacao.lower() == type_bidding:
+            if normalize_text(mod_licitacao) == normalize_text(type_bidding):
                 logger_data_analysis.debug("Correct bidding mode!")
             elif not mod_licitacao:
                 logger_data_analysis.debug("Bidding mode not found!")
+
+                error_this_doc.append({
+                    'code': BIDDING_NOT_FOUND,
+                    'error': ERROR_TYPE[BIDDING_NOT_FOUND]
+                })
+
             else:
                 logger_data_analysis.debug("Wrong bidding mode!")
                 logger_data_analysis.debug("Search if this 'nota de empenho' "
                                            "have another 'Reforço'")
+                error_this_doc.append({
+                    'code': WRONG_BIDDING,
+                    'error': ERROR_TYPE[WRONG_BIDDING]
+                })
+
+            if error_this_doc:
+                error_founded[type_bidding][doc['_id']] = error_this_doc
 
         logger_data_analysis.debug('-' * 20)
     logger_data_analysis.debug("We found this errors: %s",
                                json.dumps(error_founded))
+
+
+def check_extrapolar_amount(doc):
+    doc_ordered = order_by_date(doc['documentos_relacionados'])
+
+    return True
+
+
+def order_by_date(list_item):
+    indexes = [(item['data'], i) for i, item in enumerate(list_item)]
+    indexes.sort()
+    print indexes
+    new_list_item = []
+    for _, index in indexes:
+        print list_item[index]
+        new_list_item.append(list_item[index])
+    return new_list_item
+
 if __name__ == "__main__":
     analysis_bidding_mode()
