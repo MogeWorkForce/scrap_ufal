@@ -6,6 +6,8 @@ import logging
 import os
 from collections import defaultdict
 
+import pymongo
+
 from utils import normalize_text
 from utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
 from utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
@@ -43,6 +45,7 @@ def analysis_bidding_mode():
     error_founded = defaultdict(dict)
     for role in docs_dao.roles.find():
         type_bidding = role['_id']
+        tipo_de_licitacao = role['tipo_de_licitacao']
         logger_data_analysis.debug('-' * 20)
         logger_data_analysis.debug('Type_bidding: %s', type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])).limit(5):
@@ -56,9 +59,7 @@ def analysis_bidding_mode():
             logger_data_analysis.debug(mod_licitacao)
             logger_data_analysis.debug(doc['geral_data']['url'])
 
-            if normalize_text(mod_licitacao) == normalize_text(type_bidding):
-                logger_data_analysis.debug("Correct bidding mode!")
-            elif not mod_licitacao:
+            if not mod_licitacao:
                 logger_data_analysis.debug("Bidding mode not found!")
 
                 error_this_doc.append({
@@ -67,9 +68,20 @@ def analysis_bidding_mode():
                 })
 
             else:
-                logger_data_analysis.debug("Wrong bidding mode!")
-                logger_data_analysis.debug("Search if this 'nota de empenho' "
-                                           "have another 'Reforço'")
+                correct_bidding = get_correct_type_bidding(limit_value,
+                                            tipo_de_licitacao)
+                correct_bidding = normalize_text(correct_bidding)
+                if correct_bidding == normalize_text(type_bidding):
+                    logger_data_analysis.debug("Correct bidding mode!")
+                else:
+                    logger_data_analysis.debug("Wrong bidding mode!")
+
+                    error_this_doc.append({
+                        'code': WRONG_BIDDING,
+                        'error': VERBOSE_ERROR_TYPE[WRONG_BIDDING],
+                        'correct': correct_bidding
+                    })
+
             if check_exceded_amount(doc):
                 error_this_doc.append({
                     'code': EXCEDED_LIMIT_OF_PAYMENTS,
@@ -133,8 +145,14 @@ def get_amount_empenhado(doc):
     return limit_value
 
 
-def get_correct_type_bidding(value, actual_bidding_mode):
-    pass
+def get_correct_type_bidding(value, tipo_de_licitacao):
+    type_bidding = docs_dao.bidding_mode.find({
+        "tipo_de_licitacao": tipo_de_licitacao,
+        "min": {"$lte": value}
+    }, sort=[("min", -1)], limit=1)
+
+    type_bidding = list(type_bidding)[0]['_id']
+    return type_bidding
 
 
 def order_by_date(list_item):
