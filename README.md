@@ -32,7 +32,7 @@ Se tiver problemas de como trabalhar com virtualenvs no Windows, recomendo ler e
   * Banco de Dados, inicialmente MongoDB.
   * Paralelizar a captura dos dados (aplicada aos Documentos Relacionados).
   * Engenharia reversa (dada uma Nota de Liquidação/Pagamento ou Empenho (espécie: Reforço)) capturar todos os dados gerando o conteúdo da Nota de Empenho Original.
-  * Adicionado o gerenciamento de jobs por configurações via banco.
+  * Adicionado o shutdown do crawler por configurações via banco.
   * Inserir novas Urls via API
   * Visualizar dados gerais em curso.
   * Saber quantos Documentos foram inseridos nos últimos X dias.
