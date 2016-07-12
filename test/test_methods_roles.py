@@ -2,7 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import pytest
-from .roles import order_by_date
+from ..roles import order_by_date
 
 
 def test_check_extrapolar_amount():

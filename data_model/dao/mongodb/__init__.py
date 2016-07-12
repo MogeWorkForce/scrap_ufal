@@ -243,6 +243,7 @@ class ProxiesDao(MongoClient):
         self.error_proxies = self.db_proxy.error_proxies
 
     def insert_proxies(self, list_proxy):
+        now = datetime.now()
         if not isinstance(list_proxy, (list, tuple)):
             list_proxy = [list_proxy]
 
@@ -250,7 +251,8 @@ class ProxiesDao(MongoClient):
             {
                 'in_use': False,
                 'proxy': x['proxy'],
-                'localization': x['localization']
+                'localization': x['localization'],
+                "last_date_in_use": int(now.strftime("%Y%m%d%H%M%S"))
             } for x in list_proxy
             ]
         self.proxies.insert_many(list_proxy)

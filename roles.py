@@ -8,10 +8,10 @@ from collections import defaultdict
 
 import pymongo
 
-from utils import normalize_text
-from utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
-from utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
-from utils.analysis_codes import VERBOSE_ERROR_TYPE
+from .utils import normalize_text
+from .utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
+from .utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
+from .utils.analysis_codes import VERBOSE_ERROR_TYPE
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -27,28 +27,27 @@ logger.addHandler(file_handler)
 logger_data_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_data_analysis.setLevel(level_debug)
 
-from data_model.dao.mongodb import DocumentsDao
+from .data_model.dao.mongodb import DocumentsDao
 
 MODE = os.environ.get('MODE')
 if MODE == 'PROD':
     docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    # docs_dao = DocumentsDao(host='172.17.0.1')
-    docs_dao = DocumentsDao()
+    docs_dao = DocumentsDao(host='172.17.0.1')
 
 
 def analysis_bidding_mode():
-    # 0 - carregar as regras
-    # 1 - Selecionar a nota de empenho de acordo com as regras
-    # 2 - Checkar se a modalidade é consistente com a faixa de valores
 
     error_founded = defaultdict(dict)
+    total_correct = 0
+    total = 0
+    total_error = 0
     for role in docs_dao.roles.find():
         type_bidding = role['_id']
         tipo_de_licitacao = role['tipo_de_licitacao']
         logger_data_analysis.debug('-' * 20)
         logger_data_analysis.debug('Type_bidding: %s', type_bidding)
-        for doc in docs_dao.documents.find(json.loads(role['query'])).limit(5):
+        for doc in docs_dao.documents.find(json.loads(role['query'])):
             logger_data_analysis.debug(doc['_id'])
             mod_licitacao = doc['dados_detalhados']['modalidade_de_licitacao']
             if isinstance(mod_licitacao, (tuple, list)):
@@ -98,10 +97,17 @@ def analysis_bidding_mode():
 
             if error_this_doc:
                 error_founded[doc['_id']] = error_this_doc
+                total_error += 1
+            else:
+                total_correct += 1
+
+            total += 1
 
         logger_data_analysis.debug('-' * 20)
     logger_data_analysis.debug("We found this errors: %s",
                                json.dumps(error_founded))
+    logger_data_analysis.debug("Total Correct: %s", total_correct)
+    logger_data_analysis.debug("Total Analysed: %s", total)
 
 
 def check_exceded_amount(doc):
@@ -121,10 +127,6 @@ def check_exceded_amount(doc):
             elif type_species_of_bidding == 'reforco':
                 limit_value += item['valor_rs']
 
-        msg = '\n%s --- (%.2f) limit_value %s - notas_pagamento %s'
-        logger_data_analysis.debug(msg,
-                                   item['data'], item['valor_rs'],
-                                   limit_value, notas_pagamento)
         if limit_value < notas_pagamento:
             return True
 
