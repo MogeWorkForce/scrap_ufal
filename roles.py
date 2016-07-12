@@ -7,6 +7,9 @@ import os
 from collections import defaultdict
 
 from utils import normalize_text
+from utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
+from utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
+from utils.analysis_codes import VERBOSE_ERROR_TYPE
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -31,17 +34,6 @@ else:
     # docs_dao = DocumentsDao(host='172.17.0.1')
     docs_dao = DocumentsDao()
 
-NULL_VALEU_EMPENHADO = 11
-BIDDING_NOT_FOUND = 22
-WRONG_BIDDING = 23
-
-
-ERROR_TYPE = {
-    BIDDING_NOT_FOUND: "Bidding mode not found",
-    WRONG_BIDDING: "Wrong bidding mode",
-    NULL_VALEU_EMPENHADO: "'Nota de Empenho' with 0 value after check limit."
-}
-
 
 def analysis_bidding_mode():
     # 0 - carregar as regras
@@ -60,6 +52,7 @@ def analysis_bidding_mode():
                 mod_licitacao = mod_licitacao[0]
 
             error_this_doc = []
+            limit_value = get_amount_empenhado(doc)
             logger_data_analysis.debug(mod_licitacao)
             logger_data_analysis.debug(doc['geral_data']['url'])
 
@@ -70,31 +63,36 @@ def analysis_bidding_mode():
 
                 error_this_doc.append({
                     'code': BIDDING_NOT_FOUND,
-                    'error': ERROR_TYPE[BIDDING_NOT_FOUND]
+                    'error': VERBOSE_ERROR_TYPE[BIDDING_NOT_FOUND]
                 })
 
             else:
                 logger_data_analysis.debug("Wrong bidding mode!")
                 logger_data_analysis.debug("Search if this 'nota de empenho' "
                                            "have another 'Reforço'")
-                if check_extrapolar_amount(doc):
-                    error_this_doc.append({
-                        'code': WRONG_BIDDING,
-                        'error': ERROR_TYPE[WRONG_BIDDING]
-                    })
+            if check_exceded_amount(doc):
+                error_this_doc.append({
+                    'code': EXCEDED_LIMIT_OF_PAYMENTS,
+                    'error': VERBOSE_ERROR_TYPE[EXCEDED_LIMIT_OF_PAYMENTS]
+                })
 
-                limit_value = get_amount_empenhado(doc)
-                logger_data_analysis.debug('limite de gastos: %.2f', limit_value)
+            logger_data_analysis.debug('limite de gastos (%s): %.2f',
+                                       doc['_id'], limit_value)
+            if limit_value == 0:
+                error_this_doc.append({
+                    'code': NULL_VALUE_EMPENHADO,
+                    'error': VERBOSE_ERROR_TYPE[NULL_VALUE_EMPENHADO]
+                })
 
             if error_this_doc:
-                error_founded[type_bidding][doc['_id']] = error_this_doc
+                error_founded[doc['_id']] = error_this_doc
 
         logger_data_analysis.debug('-' * 20)
     logger_data_analysis.debug("We found this errors: %s",
                                json.dumps(error_founded))
 
 
-def check_extrapolar_amount(doc):
+def check_exceded_amount(doc):
     doc_ordered = order_by_date(doc['documentos_relacionados'])
 
     logger_data_analysis.debug('doc: %s', doc['_id'])
@@ -111,9 +109,10 @@ def check_extrapolar_amount(doc):
             elif type_species_of_bidding == 'reforco':
                 limit_value += item['valor_rs']
 
-        msg = '\n%s --- limit_value %s - notas_pagamento %s'
+        msg = '\n%s --- (%.2f) limit_value %s - notas_pagamento %s'
         logger_data_analysis.debug(msg,
-                                   item['data'], limit_value, notas_pagamento)
+                                   item['data'], item['valor_rs'],
+                                   limit_value, notas_pagamento)
         if limit_value < notas_pagamento:
             return True
 

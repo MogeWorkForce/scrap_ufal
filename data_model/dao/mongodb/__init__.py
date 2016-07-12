@@ -39,6 +39,7 @@ class DocumentsDao(MongoClient):
             self.db_empenho = self.notas_empenho
         self.documents = self.db_empenho.documents
         self.roles = self.db_empenho.roles
+        self.bidding_mode = self.db_empenho.bidding_mode
         self.url = UrlManagerDao(*args, **kwargs)
 
     def insert_document(self, doc, upsert=False):

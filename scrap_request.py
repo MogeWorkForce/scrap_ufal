@@ -266,9 +266,9 @@ def load_content(content_original, paginator=False, data=None,
 
                 link_document = content_row.group('link_document')
                 if link_document:
-                    new_url = data['geral_data']['url_base'] + '/' + \
-                        data['geral_data'][
-                        'session'] + '/' + link_document
+                    new_url = data['geral_data']['url_base'] + '/'
+                    new_url += data['geral_data']['session'] + '/'
+                    new_url += link_document
                     if new_url not in visited_links:
                         docs_relacionados.append(new_url)
 
@@ -287,10 +287,11 @@ def get_paginator_content(content_original, data, visited_links):
     for pg in paginas[:1]:
         _, end = pg
         for next_pg in xrange(1, int(end) + 1):
-            url_ = data['geral_data']['url_base'] + '/' + \
-                data['geral_data']['session'] + "/"
-            url_ += data['geral_data']['type_doc'] + '?documento=' + \
-                data['geral_data']['num_doc']
+            url_ = data['geral_data']['url_base'] + '/'
+            url_ +=data['geral_data']['session'] + "/"
+            url_ += data['geral_data']['type_doc'] + '?documento='
+            url_ += data['geral_data']['num_doc']
+
             if next_pg == 1:
                 link_ = url_
             else:
