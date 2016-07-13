@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import requests
 import logging
 import os
 import re
 import time
-
 from datetime import date, timedelta
-from ..data_model.dao.mongodb import UrlManagerDao, ProxiesDao
+
+import requests
+
 from .scrap_request import get_any_proxy
+from ..data_model.dao.mongodb import UrlManagerDao, ProxiesDao
 from ..utils import clean_result
 
 MODE = os.environ.get('MODE', 'DEV')
@@ -20,7 +21,6 @@ if MODE == 'PROD':
 else:
     url_dao = UrlManagerDao(host='172.17.0.1')
     proxy_dao = ProxiesDao(host='172.17.0.1')
-
 
 link_match = re.compile(r'a href="(?P<link_url>[^"]*)"?')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
@@ -56,7 +56,6 @@ def get_random_batch(batch_size=5):
 
 
 def get_links_notas_empenho(date_start=None, date_end=None, params=None):
-
     url_base = "http://portaltransparencia.gov.br/despesasdiarias/"
     url = url_base + "resultado"
 

@@ -5,6 +5,7 @@ import json
 import os
 
 from pymongo.errors import DuplicateKeyError
+
 from ..data_model.dao.mongodb import DocumentsDao, SystemConfigDao, ProxiesDao
 
 MODE = os.environ.get('MODE')
@@ -92,7 +93,7 @@ def insert_configs():
 
 
 def insert_proxies():
-    FILE = os.environ.get("PROXY_FILE", BASE_DIR+"/proxies_for_input.json")
+    FILE = os.environ.get("PROXY_FILE", BASE_DIR + "/proxies_for_input.json")
     with open(FILE) as arq:
         list_proxy = json.load(arq)
 

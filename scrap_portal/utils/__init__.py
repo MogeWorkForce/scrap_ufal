@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+
 from unicodedata import normalize
 
 NOT_ALLOWED_CLEAN = ('documentos_relacionados',)

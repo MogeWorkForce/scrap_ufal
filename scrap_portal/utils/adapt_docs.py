@@ -21,5 +21,6 @@ def fix_old_docs_to_new_pattern():
         print '-' * 30, '\n', i, ' - ', key
         i += 1
 
+
 if __name__ == '__main__':
     fix_old_docs_to_new_pattern()

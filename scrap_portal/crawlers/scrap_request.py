@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-from data_model.dao.mongodb import DocumentsDao, ProxiesDao
-import requests
+import argparse
+import logging
+import os
 import re
 import time
-import logging
 import traceback
-import argparse
-import os
-
 from datetime import date
-from utils import clean_result, normalize_text
+
+import requests
+
+from ..data_model.dao.mongodb import DocumentsDao, ProxiesDao
+from ..utils import clean_result, normalize_text
 
 logger = logging.getLogger("Scrap_Ufal.scraper")
 level_debug = logging.DEBUG
@@ -257,7 +258,7 @@ def load_content(content_original, paginator=False, data=None,
                                     content_value)
                         else:
                             if not data[head[0]][rotulo[referency]][
-                                    sub_head[-1]]:
+                                sub_head[-1]]:
                                 data[head[0]][rotulo[referency]][
                                     sub_head[-1]] = [content_value]
                             else:
@@ -288,7 +289,7 @@ def get_paginator_content(content_original, data, visited_links):
         _, end = pg
         for next_pg in xrange(1, int(end) + 1):
             url_ = data['geral_data']['url_base'] + '/'
-            url_ +=data['geral_data']['session'] + "/"
+            url_ += data['geral_data']['session'] + "/"
             url_ += data['geral_data']['type_doc'] + '?documento='
             url_ += data['geral_data']['num_doc']
 

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+
 from ..data_model.dao.mongodb import DocumentsDao
 from ..utils import remove_list
-
-import pytest
 
 
 def test_remove_list():

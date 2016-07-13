@@ -6,12 +6,10 @@ import logging
 import os
 from collections import defaultdict
 
-import pymongo
-
 from ..utils import normalize_text
 from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
-from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
+from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -37,7 +35,6 @@ else:
 
 
 def analysis_bidding_mode():
-
     error_founded = defaultdict(dict)
     total_correct = 0
     total = 0
@@ -68,7 +65,7 @@ def analysis_bidding_mode():
 
             else:
                 correct_bidding = get_correct_type_bidding(limit_value,
-                                            tipo_de_licitacao)
+                                                           tipo_de_licitacao)
                 correct_bidding = normalize_text(correct_bidding)
                 if correct_bidding == normalize_text(type_bidding):
                     logger_data_analysis.debug("Correct bidding mode!")
