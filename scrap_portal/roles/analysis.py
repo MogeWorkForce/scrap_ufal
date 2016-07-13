@@ -22,8 +22,8 @@ file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-logger_data_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
-logger_data_analysis.setLevel(level_debug)
+logger_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
+logger_analysis.setLevel(level_debug)
 
 from ..data_model.dao.mongodb import DocumentsDao
 
@@ -42,21 +42,22 @@ def analysis_bidding_mode():
     for role in docs_dao.roles.find():
         type_bidding = role['_id']
         tipo_de_licitacao = role['tipo_de_licitacao']
-        logger_data_analysis.debug('-' * 20)
-        logger_data_analysis.debug('Type_bidding: %s', type_bidding)
+        logger_analysis.debug('-' * 20)
+        logger_analysis.debug(
+            'Probably type bidding, based on value: %s', type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])):
-            logger_data_analysis.debug(doc['_id'])
+            logger_analysis.debug(doc['_id'])
             mod_licitacao = doc['dados_detalhados']['modalidade_de_licitacao']
             if isinstance(mod_licitacao, (tuple, list)):
                 mod_licitacao = mod_licitacao[0]
 
             error_this_doc = []
             limit_value = get_amount_empenhado(doc)
-            logger_data_analysis.debug(mod_licitacao)
-            logger_data_analysis.debug(doc['geral_data']['url'])
+            logger_analysis.debug(mod_licitacao)
+            logger_analysis.debug(doc['geral_data']['url'])
 
             if not mod_licitacao:
-                logger_data_analysis.debug("Bidding mode not found!")
+                logger_analysis.debug("Bidding mode not found!")
 
                 error_this_doc.append({
                     'code': BIDDING_NOT_FOUND,
@@ -67,10 +68,10 @@ def analysis_bidding_mode():
                 correct_bidding = get_correct_type_bidding(limit_value,
                                                            tipo_de_licitacao)
                 correct_bidding = normalize_text(correct_bidding)
-                if correct_bidding == normalize_text(type_bidding):
-                    logger_data_analysis.debug("Correct bidding mode!")
+                if correct_bidding == normalize_text(mod_licitacao):
+                    logger_analysis.debug("Correct bidding mode!")
                 else:
-                    logger_data_analysis.debug("Wrong bidding mode!")
+                    logger_analysis.debug("Wrong bidding mode!")
 
                     error_this_doc.append({
                         'code': WRONG_BIDDING,
@@ -84,7 +85,7 @@ def analysis_bidding_mode():
                     'error': VERBOSE_ERROR_TYPE[EXCEDED_LIMIT_OF_PAYMENTS]
                 })
 
-            logger_data_analysis.debug('limite de gastos (%s): %.2f',
+            logger_analysis.debug('limite de gastos (%s): %.2f',
                                        doc['_id'], limit_value)
             if limit_value == 0:
                 error_this_doc.append({
@@ -100,17 +101,18 @@ def analysis_bidding_mode():
 
             total += 1
 
-        logger_data_analysis.debug('-' * 20)
-    logger_data_analysis.debug("We found this errors: %s",
+        logger_analysis.debug('-' * 20)
+    logger_analysis.debug("We found this errors: %s",
                                json.dumps(error_founded))
-    logger_data_analysis.debug("Total Correct: %s", total_correct)
-    logger_data_analysis.debug("Total Analysed: %s", total)
+    logger_analysis.debug("Total Correct: %s", total_correct)
+    logger_analysis.debug("Total with Error: %s", total_error)
+    logger_analysis.debug("Total Analysed: %s", total)
 
 
 def check_exceded_amount(doc):
     doc_ordered = order_by_date(doc['documentos_relacionados'])
 
-    logger_data_analysis.debug('doc: %s', doc['_id'])
+    logger_analysis.debug('doc: %s', doc['_id'])
     limit_value = doc['dados_basicos']['valor']
     notas_pagamento = 0
     for item in doc_ordered:
