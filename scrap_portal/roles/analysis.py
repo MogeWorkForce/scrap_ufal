@@ -80,17 +80,21 @@ def analysis_bidding_mode():
                     })
 
             if check_exceded_amount(doc):
+                error_msg = VERBOSE_ERROR_TYPE[EXCEDED_LIMIT_OF_PAYMENTS]
+                logger_analysis.debug(error_msg)
                 error_this_doc.append({
                     'code': EXCEDED_LIMIT_OF_PAYMENTS,
-                    'error': VERBOSE_ERROR_TYPE[EXCEDED_LIMIT_OF_PAYMENTS]
+                    'error': error_msg
                 })
 
             logger_analysis.debug('limite de gastos (%s): %.2f',
                                        doc['_id'], limit_value)
-            if limit_value == 0:
+            if limit_value <= 0:
+                error_msg = VERBOSE_ERROR_TYPE[NULL_VALUE_EMPENHADO]
+                logger_analysis.debug(error_msg)
                 error_this_doc.append({
                     'code': NULL_VALUE_EMPENHADO,
-                    'error': VERBOSE_ERROR_TYPE[NULL_VALUE_EMPENHADO]
+                    'error': error_msg
                 })
 
             if error_this_doc:
