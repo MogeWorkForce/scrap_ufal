@@ -11,6 +11,8 @@ from datetime import date, timedelta, datetime
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
+from ....utils import remove_list
+
 MODE = os.environ.get('MODE', 'DEV')
 
 logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
@@ -78,23 +80,8 @@ class DocumentsDao(MongoClient):
                 tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
             ]
-        doc = self.remove_list(doc)
+        doc = remove_list(doc)
         return doc
-
-    def remove_list(self, doc):
-        tmp_doc = {}
-        for key, value in doc.iteritems():
-            if key in self.NOT_ALLOWED_CLEAN:
-                tmp_doc[key] = value
-                continue
-            new_value = None
-            if isinstance(value, (dict,)):
-                new_value = self.remove_list(value)
-            elif isinstance(value, (list, tuple, set)):
-                new_value = value[0] if len(value) == 1 else value
-            tmp_doc[key] = new_value if new_value else value
-
-        return tmp_doc
 
 
 class UrlManagerDao(MongoClient):

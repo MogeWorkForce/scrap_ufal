@@ -22,9 +22,9 @@ file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-from data_model.dao.mongodb import ProxiesDao, SystemConfigDao
-from scrap_request import load_url_from_queue, get_content_page
-from request_range_date import get_random_batch
+from .data_model.dao.mongodb import ProxiesDao, SystemConfigDao
+from .crawlers.scrap_request import load_url_from_queue, get_content_page
+from .crawlers.request_range_date import get_random_batch
 
 MODE = os.environ.get('MODE', 'DEV')
 

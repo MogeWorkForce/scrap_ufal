@@ -8,9 +8,9 @@ import re
 import time
 
 from datetime import date, timedelta
-from data_model.dao.mongodb import UrlManagerDao, ProxiesDao
-from scrap_request import get_any_proxy
-from utils import clean_result
+from ..data_model.dao.mongodb import UrlManagerDao, ProxiesDao
+from .scrap_request import get_any_proxy
+from ..utils import clean_result
 
 MODE = os.environ.get('MODE', 'DEV')
 

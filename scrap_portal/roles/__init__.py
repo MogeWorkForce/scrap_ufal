@@ -8,10 +8,10 @@ from collections import defaultdict
 
 import pymongo
 
-from .utils import normalize_text
-from .utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
-from .utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
-from .utils.analysis_codes import VERBOSE_ERROR_TYPE
+from ..utils import normalize_text
+from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
+from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
+from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -27,7 +27,7 @@ logger.addHandler(file_handler)
 logger_data_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_data_analysis.setLevel(level_debug)
 
-from .data_model.dao.mongodb import DocumentsDao
+from ..data_model.dao.mongodb import DocumentsDao
 
 MODE = os.environ.get('MODE')
 if MODE == 'PROD':
