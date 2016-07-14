@@ -58,5 +58,4 @@ def test_consistence_data_in_remove_list():
     aleatory = random.randint(1, 10000)
     doc = DocumentsDao()
     dc1 = doc.documents.find({}).skip(aleatory).limit(1)[0]
-
     assert dc1 == remove_list(dc1)

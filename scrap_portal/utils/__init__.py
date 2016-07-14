@@ -36,3 +36,7 @@ def remove_list(doc):
         tmp_doc[key] = new_value if new_value is not None else value
 
     return tmp_doc
+
+
+def make_list_with_dicts(dict_with_list):
+    length = len(dict_with_list.values()[0])

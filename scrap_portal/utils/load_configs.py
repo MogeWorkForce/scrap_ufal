@@ -30,7 +30,7 @@ def insert_roles():
         },
         {
             u'query': u'{"dados_detalhados.elemento_de_despesa": "51 - OBRAS E INSTALACOES", "dados_detalhados.categoria_de_despesa": "4 - Despesas de Capital", "dados_basicos.especie_de_empenho": "Original", "dados_basicos.valor": {"$lte": 1500000, "$gte": 150000.01}}',
-            u'_id': u'tomada de preços',
+            u'_id': u'tomada de preço',
             'tipo_de_licitacao': 'engenharia'
         },
         {
@@ -58,7 +58,7 @@ def insert_roles():
         },
         {
             'max': 1500000, 'min': 150000.01,
-            u'_id': u'tomada de preços',
+            u'_id': u'tomada de preço',
             'tipo_de_licitacao': 'engenharia'
         },
         {
