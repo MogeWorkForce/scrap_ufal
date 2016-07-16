@@ -25,23 +25,15 @@ match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(
     r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
-links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
 match_content = re.compile(
     r'<(?:t(?:d|h)|a|span)[^>]*?\s?(?:class="(?P<class>[^"]*?)")?.*?'
     r'(?:href="(?P<link_document>[^"]*?)")?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
 )
-match_tr_content = re.compile(
-    r'<(?:td|span|tr)\s?(?:colspan="[^"]*?"|class="(?P<class>[^"]*?)")?>'
-    r'(?P<content_line>[^<]*?)<\/(?:td|span|tr)>'
-)
 
 match_tr = re.compile(
     r'<tr\s?(?:class="(?P<class_tr>[^"]*)")?.*?>(?P<content_tr>.*?)<\/tr>'
 )
-
-match_tr_subtable = re.compile(
-    r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -258,7 +250,7 @@ def load_content(content_original, paginator=False, data=None,
                                     content_value)
                         else:
                             if not data[head[0]][rotulo[referency]][
-                                sub_head[-1]]:
+                                                            sub_head[-1]]:
                                 data[head[0]][rotulo[referency]][
                                     sub_head[-1]] = [content_value]
                             else:

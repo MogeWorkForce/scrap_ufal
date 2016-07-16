@@ -99,7 +99,7 @@ class UrlManagerDao(MongoClient):
         self.fallback = self.db_urls.fallback
         self.finder_urls_notas = self.db_urls.finder_urls_notas
 
-    def set_chunk_url(self, list_url):
+    def set_chunk_url(self, list_url, collection='queue'):
         date_ = date.today()
         key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
@@ -112,18 +112,20 @@ class UrlManagerDao(MongoClient):
         try:
             tmp = copy.deepcopy(key)
             tmp.update({"urls": list_url})
-            self.db_urls.queue.insert_one(tmp)
+            self.db_urls[collection].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
             logger.debug(
-                "Expected error - move on addToSet - Queue - DuplicateKey")
+                "Expected error - move on addToSet - %s - DuplicateKey",
+                collection.capitalize())
 
         if not skip:
             try:
-                self.queue.update_one(key, data)
+                self.db_urls[collection].update_one(key, data)
             except DuplicateKeyError as e:
                 logger.error(e)
-                logger.debug("move on - DuplicateKey - Queue")
+                logger.debug(
+                    "move on - DuplicateKey - %s", collection.capitalize())
 
     def dynamic_url(self, collection, url):
         date_ = date.today()

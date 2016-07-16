@@ -51,7 +51,6 @@ def analysis_bidding_mode():
             type_bidding)
         correct_bidding = normalize_text(type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])):
-
             logger_analysis.debug(doc['_id'])
             mod_licitacao = doc['dados_detalhados']['modalidade_de_licitacao']
             if isinstance(mod_licitacao, (tuple, list)):
@@ -173,7 +172,7 @@ def check_exceded_amount(doc):
                 limit_value += item['valor_rs']
         logger_analysis.debug("(%s) limite: %.2f ---- pagamento: %.2f",
                               item['data'], limit_value, notas_pagamento)
-        if limit_value <= notas_pagamento:
+        if round(notas_pagamento, 2) > round(limit_value, 2):
             return True
 
     return False
