@@ -196,18 +196,18 @@ class UrlManagerDao(MongoClient):
 
         if month_elapse > 1:
             new_start_date = end_month + timedelta(days=1)
-            self.add_period_to_recover_in_portal(new_start_date,
-                                                 month_elapse - 1)
+            self.add_period_to_recover_in_portal(
+                new_start_date, month_elapse - 1, params_search)
 
     def insert_url_finder(self, data, params=None):
         try:
-            if params and isinstance(params, (dict,)):
+            if not isinstance(params, (dict,)):
                 params = {}
             data.update({'params': params})
             self.finder_urls_notas.insert(data)
         except DuplicateKeyError as e:
             logger.error(e)
-            logger.debug("DuplicateKey on - %s", 'Finder Urls Notas')
+            logger.debug("DuplicateKey on - Finder Urls Notas")
 
     def random_finder_urls_notas(self, many_items):
         instances = self.finder_urls_notas.find()
@@ -245,7 +245,7 @@ class ProxiesDao(MongoClient):
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        random_skip = random.randint(0, 200)
+        random_skip = random.randint(0, 120)
         now = datetime.now() - timedelta(minutes=10, seconds=30)
         list_proxy = self.proxies.find({
             'in_use': False,

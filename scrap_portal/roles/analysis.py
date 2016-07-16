@@ -51,6 +51,7 @@ def analysis_bidding_mode():
             type_bidding)
         correct_bidding = normalize_text(type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])):
+
             logger_analysis.debug(doc['_id'])
             mod_licitacao = doc['dados_detalhados']['modalidade_de_licitacao']
             if isinstance(mod_licitacao, (tuple, list)):
@@ -149,6 +150,7 @@ def check_exceded_amount(doc):
                         " coletados no futuro.")
 
                     value = item['valor_rs']
+                    logger_analysis.debug(item['especie'])
                     if 'OBS ' in item['especie']:
                         logger_analysis.debug(
                             'Encontrado "OBS" (Tipo de Ordem Bancaria) dentro '
@@ -165,13 +167,13 @@ def check_exceded_amount(doc):
                     docs_dao.url.dynamic_url('queue', url)
 
         elif type_bidding_relational_docs == 'empenho':
-            if type_species_of_bidding == 'anulacao':
+            if type_species_of_bidding in ['anulacao', 'cancelamento']:
                 limit_value -= item['valor_rs']
             elif type_species_of_bidding == 'reforco':
                 limit_value += item['valor_rs']
-        logger_analysis.debug("limite: %.2f ---- pagamento: %.2f",
-                              limit_value, notas_pagamento)
-        if limit_value < notas_pagamento:
+        logger_analysis.debug("(%s) limite: %.2f ---- pagamento: %.2f",
+                              item['data'], limit_value, notas_pagamento)
+        if limit_value <= notas_pagamento:
             return True
 
     return False
@@ -183,7 +185,7 @@ def get_amount_empenhado(doc):
         type_bidding_relational_docs = normalize_text(item['fase'])
         type_species_of_bidding = normalize_text(item['especie'])
         if type_bidding_relational_docs == 'empenho':
-            if type_species_of_bidding == 'anulacao':
+            if type_species_of_bidding in ['anulacao', 'cancelamento']:
                 limit_value -= item['valor_rs']
             elif type_species_of_bidding == 'reforco':
                 limit_value += item['valor_rs']
