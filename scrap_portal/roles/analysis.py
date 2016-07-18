@@ -7,21 +7,11 @@ import os
 import traceback
 from collections import defaultdict
 
-from ..utils import normalize_text
+from ..utils import normalize_text, level_debug
 from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
 
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
-level_debug = logging.DEBUG
-logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
 
 logger_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_analysis.setLevel(level_debug)
@@ -100,6 +90,7 @@ def analysis_bidding_mode():
 
             if error_this_doc:
                 error_founded[doc['_id']] = error_this_doc
+                docs_dao.inform_analysed_docs(doc['_id'], error_this_doc)
                 total_error += 1
             else:
                 correct_founded[doc['_id']] = doc['geral_data']['url']

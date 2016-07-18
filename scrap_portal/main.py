@@ -11,16 +11,7 @@ import sys
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
-level_debug = logging.DEBUG
-logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+from .utils import logger, level_debug
 
 from .data_model.dao.mongodb import ProxiesDao, SystemConfigDao
 from .crawlers.scrap_request import load_url_from_queue, get_content_page
@@ -69,7 +60,7 @@ if __name__ == '__main__':
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
-    logScheduller.setLevel(logging.DEBUG)
+    logScheduller.setLevel(level_debug)
 
     scheduler = BackgroundScheduler(
         logger=logScheduller, executors=executors, job_defaults=job_defaults)

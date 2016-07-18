@@ -1,7 +1,19 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import logging
 from unicodedata import normalize
+
+formatter = logging.Formatter(
+    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("Scrap_Ufal")
+level_debug = logging.DEBUG
+logger.setLevel(level_debug)
+file_handler = logging.StreamHandler()
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 NOT_ALLOWED_CLEAN = ('documentos_relacionados',)
 
