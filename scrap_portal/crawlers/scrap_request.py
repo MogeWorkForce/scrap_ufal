@@ -325,6 +325,8 @@ def load_url_from_queue(batch=1, collection='queue'):
             init_ = 0
         else:
             init_ = random.randint(0, length_urls + 1)
+            if init_ + batch >= length_urls:
+                init_ -= batch
 
         logger.debug("(%s) Interval %s to %s",
                      collection.upper(),
@@ -333,7 +335,6 @@ def load_url_from_queue(batch=1, collection='queue'):
                      )
         tmp_urls_load = urls_load['urls'][init_:init_ + batch]
 
-        visited_link = []
         for url in tmp_urls_load:
             try:
                 in_ = client.url.verify_today_urls(url)
@@ -341,7 +342,7 @@ def load_url_from_queue(batch=1, collection='queue'):
                 if not in_:
                     logger.debug('Start load url_from %s! %s',
                                  collection.upper(), url)
-                    get_content_page(url, visited_links=visited_link)
+                    get_content_page(url)
                     client.url.dynamic_url('queue_loaded', url)
                 else:
                     logger.warning("Url already loaded: %s", url)
