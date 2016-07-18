@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from unicodedata import normalize
-from data_model.dao.mongodb import DocumentsDao, ProxiesDao
-import requests
+
+import argparse
+import logging
+import os
 import re
 import time
-import logging
 import traceback
-import argparse
-import os
-
 from datetime import date
+
+import requests
+
+from ..data_model.dao.mongodb import DocumentsDao, ProxiesDao
+from ..utils import clean_result, normalize_text
 
 logger = logging.getLogger("Scrap_Ufal.scraper")
 level_debug = logging.DEBUG
@@ -23,23 +25,15 @@ match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(
     r'<span class="paginaXdeN">Página (?P<inicio>\d{1,3}?) de (?P<fim>\d{1,3})</span>')
-links = re.compile(r'<a[^>]*href="(?P<links>.*)?">.*?</a>')
 
 match_content = re.compile(
     r'<(?:t(?:d|h)|a|span)[^>]*?\s?(?:class="(?P<class>[^"]*?)")?.*?'
     r'(?:href="(?P<link_document>[^"]*?)")?>(?P<content>[^<]*?)</(?:t(?:d|h)|a|span)>'
 )
-match_tr_content = re.compile(
-    r'<(?:td|span|tr)\s?(?:colspan="[^"]*?"|class="(?P<class>[^"]*?)")?>'
-    r'(?P<content_line>[^<]*?)<\/(?:td|span|tr)>'
-)
 
 match_tr = re.compile(
     r'<tr\s?(?:class="(?P<class_tr>[^"]*)")?.*?>(?P<content_tr>.*?)<\/tr>'
 )
-
-match_tr_subtable = re.compile(
-    r'<tr\s?(?:class="(?P<class_subtable_tr>[^"]*?)").*?>(?P<content_subclass>.*)<\/tr>')
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -73,17 +67,6 @@ def try_numeric(value):
     except ValueError:
         pass
     return value
-
-
-def _normalize_text(txt, codif='utf-8'):
-    if isinstance(txt, str):
-        txt = txt.decode(codif, "ignore")
-    return normalize('NFKD', txt).encode('ASCII', 'ignore'). \
-        replace(" ", "_"). \
-        replace(':', ''). \
-        replace("(", ""). \
-        replace(")", ""). \
-        replace("$", "s").lower()
 
 
 def get_general_data(url, data=None):
@@ -157,7 +140,7 @@ def load_content(content_original, paginator=False, data=None,
             for z, item in enumerate(match_content.finditer(line_)):
                 content_value = item.group('content').strip()
                 if class_tr_sub in ('cabecalho',):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     subtable_headers.append(content_value)
                     content_[subtable_headers[-1]] = {}
@@ -209,7 +192,7 @@ def load_content(content_original, paginator=False, data=None,
             for z, content_row in enumerate(match_content.finditer(line)):
                 content_value = content_row.group('content').strip()
                 if class_tr in ('cabecalho', 'titulo'):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     last_key_tr = content_value
                     head.append(last_key_tr)
@@ -228,7 +211,7 @@ def load_content(content_original, paginator=False, data=None,
                     duo_rotulo = False
 
                 if class_content and class_content in ('rotulo'):
-                    content_value = _normalize_text(content_value).replace(
+                    content_value = normalize_text(content_value).replace(
                         '_/_', '_')
                     last_key_th = content_value
                     sub_head.append(last_key_th)
@@ -267,7 +250,7 @@ def load_content(content_original, paginator=False, data=None,
                                     content_value)
                         else:
                             if not data[head[0]][rotulo[referency]][
-                                    sub_head[-1]]:
+                                                            sub_head[-1]]:
                                 data[head[0]][rotulo[referency]][
                                     sub_head[-1]] = [content_value]
                             else:
@@ -276,9 +259,9 @@ def load_content(content_original, paginator=False, data=None,
 
                 link_document = content_row.group('link_document')
                 if link_document:
-                    new_url = data['geral_data']['url_base'] + '/' + \
-                        data['geral_data'][
-                        'session'] + '/' + link_document
+                    new_url = data['geral_data']['url_base'] + '/'
+                    new_url += data['geral_data']['session'] + '/'
+                    new_url += link_document
                     if new_url not in visited_links:
                         docs_relacionados.append(new_url)
 
@@ -291,21 +274,17 @@ def load_content(content_original, paginator=False, data=None,
     return data
 
 
-def clean_result(result):
-    return result.text.replace('\n', '').replace(
-        '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
-
-
 def get_paginator_content(content_original, data, visited_links):
     paginas = get_paginator.findall(content_original)
     end_link_paginator = '&pagina=%s#paginacao'
     for pg in paginas[:1]:
         _, end = pg
         for next_pg in xrange(1, int(end) + 1):
-            url_ = data['geral_data']['url_base'] + '/' + \
-                data['geral_data']['session'] + "/"
-            url_ += data['geral_data']['type_doc'] + '?documento=' + \
-                data['geral_data']['num_doc']
+            url_ = data['geral_data']['url_base'] + '/'
+            url_ += data['geral_data']['session'] + "/"
+            url_ += data['geral_data']['type_doc'] + '?documento='
+            url_ += data['geral_data']['num_doc']
+
             if next_pg == 1:
                 link_ = url_
             else:

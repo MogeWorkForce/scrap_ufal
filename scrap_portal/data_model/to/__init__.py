@@ -2,16 +2,15 @@ import json
 
 
 class TO(object):
-
     def __init__(self, **kwargs):
         for key, value in kwargs.iteritems():
-            if isinstance(value, (dict, )):
+            if isinstance(value, (dict,)):
                 self.__dict__[key] = TO(**value)
             else:
                 self.__dict__[key] = value
 
     def __setattr__(self, attr, value):
-        if isinstance(value, (dict, )):
+        if isinstance(value, (dict,)):
             self.__dict__[attr] = TO(**value)
         else:
             self.__dict__[attr] = value
@@ -53,13 +52,14 @@ def recursive_acces(key, obj):
         for k, val in obj.iteritems():
             tmp_data[k] = recursive_acces(k, val)
 
-    elif isinstance(obj, (TO, )):
+    elif isinstance(obj, (TO,)):
         for k, val in obj:
             tmp_data[k] = recursive_acces(k, val)
     else:
         return obj
 
     return tmp_data
+
 
 if __name__ == '__main__':
     d = TO(**{'0': ['maria']})

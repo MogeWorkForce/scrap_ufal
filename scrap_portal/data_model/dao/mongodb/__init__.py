@@ -11,20 +11,22 @@ from datetime import date, timedelta, datetime
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 
+from ....utils import remove_list, logger, level_debug
+
 MODE = os.environ.get('MODE', 'DEV')
 
-logger = logging.getLogger('Scrap_Ufal.DocumentsDao')
-logger.setLevel(logging.DEBUG)
+logger_dao = logging.getLogger('Scrap_Ufal.DocumentsDao')
+logger_dao.setLevel(logging.DEBUG)
 
 uri_url = 'MONGO_URI: ' + os.environ.get('MONGODB_ADDON_DB', '')
 mongo_db = 'MONGO_DB: ' + os.environ.get('MONGODB_ADDON_URI', '')
-logger.debug('\n\n')
-logger.debug('-' * 30)
-logger.debug(uri_url)
-logger.debug(mongo_db)
+logger_dao.debug('\n\n')
+logger_dao.debug('-' * 30)
+logger_dao.debug(uri_url)
+logger_dao.debug(mongo_db)
 
-logger.debug('\n\n')
-logger.debug('-' * 30)
+logger_dao.debug('\n\n')
+logger_dao.debug('-' * 30)
 
 
 class DocumentsDao(MongoClient):
@@ -38,6 +40,8 @@ class DocumentsDao(MongoClient):
         else:
             self.db_empenho = self.notas_empenho
         self.documents = self.db_empenho.documents
+        self.roles = self.db_empenho.roles
+        self.bidding_mode = self.db_empenho.bidding_mode
         self.url = UrlManagerDao(*args, **kwargs)
 
     def insert_document(self, doc, upsert=False):
@@ -47,7 +51,7 @@ class DocumentsDao(MongoClient):
             doc = self.adapt_docs_relacionados(doc)
             doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
             self.documents.replace_one(key, doc, upsert=upsert)
-            logger.debug(('save:', key))
+            logger_dao.debug(('save:', key))
             url_ = doc['geral_data']['url_base'] + '/'
             url_ += doc['geral_data']['session'] + "/"
             url_ += doc['geral_data']['type_doc']
@@ -55,8 +59,8 @@ class DocumentsDao(MongoClient):
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:
-            logger.error(e)
-            logger.debug("move on - DuplicateKey")
+            logger_dao.error(e)
+            logger_dao.debug("move on - DuplicateKey")
 
     def adapt_docs_relacionados(self, doc):
         tmp_docs = doc["documentos_relacionados"]
@@ -76,23 +80,14 @@ class DocumentsDao(MongoClient):
                 tmp_docs["valor_rs"][i] else 0.00,
             } for i in xrange(len(tmp_docs["fase"]))
             ]
-        doc = self.remove_list(doc)
+        doc = remove_list(doc)
         return doc
 
-    def remove_list(self, doc):
-        tmp_doc = {}
-        for key, value in doc.iteritems():
-            if key in self.NOT_ALLOWED_CLEAN:
-                tmp_doc[key] = value
-                continue
-            new_value = None
-            if isinstance(value, (dict,)):
-                new_value = self.remove_list(value)
-            elif isinstance(value, (list, tuple, set)):
-                new_value = value[0] if len(value) == 1 else value
-            tmp_doc[key] = new_value if new_value else value
-
-        return tmp_doc
+    def inform_analysed_docs(self, doc_id, error_list):
+        self.documents.update_one(
+            {"_id": doc_id},
+            {"$set": {"errors": error_list, "analysed": True}}
+        )
 
 
 class UrlManagerDao(MongoClient):
@@ -110,7 +105,7 @@ class UrlManagerDao(MongoClient):
         self.fallback = self.db_urls.fallback
         self.finder_urls_notas = self.db_urls.finder_urls_notas
 
-    def set_chunk_url(self, list_url):
+    def set_chunk_url(self, list_url, collection='queue'):
         date_ = date.today()
         key = {"_id": int(date_.strftime(self.PATTERN_PK))}
         data = {
@@ -123,18 +118,20 @@ class UrlManagerDao(MongoClient):
         try:
             tmp = copy.deepcopy(key)
             tmp.update({"urls": list_url})
-            self.db_urls.queue.insert_one(tmp)
+            self.db_urls[collection].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
-            logger.debug(
-                "Expected error - move on addToSet - Queue - DuplicateKey")
+            logger_dao.debug(
+                "Expected error - move on addToSet - %s - DuplicateKey",
+                collection.capitalize())
 
         if not skip:
             try:
-                self.queue.update_one(key, data)
+                self.db_urls[collection].update_one(key, data)
             except DuplicateKeyError as e:
-                logger.error(e)
-                logger.debug("move on - DuplicateKey - Queue")
+                logger_dao.error(e)
+                logger_dao.debug(
+                    "move on - DuplicateKey - %s", collection.capitalize())
 
     def dynamic_url(self, collection, url):
         date_ = date.today()
@@ -151,7 +148,7 @@ class UrlManagerDao(MongoClient):
             self.db_urls[collection].insert_one(tmp)
             skip = True
         except DuplicateKeyError as e:
-            logger.debug(
+            logger_dao.debug(
                 "Expected error - move on - %s - DuplicateKey",
                 collection.capitalize())
 
@@ -159,8 +156,8 @@ class UrlManagerDao(MongoClient):
             try:
                 self.db_urls[collection].update_one(key, data)
             except DuplicateKeyError as e:
-                logger.error(e)
-                logger.debug(
+                logger_dao.error(e)
+                logger_dao.debug(
                     "move on -  %s - DuplicateKey", collection.capitalize())
 
     def remove_urls(self, list_urls, collection='queue'):
@@ -207,18 +204,18 @@ class UrlManagerDao(MongoClient):
 
         if month_elapse > 1:
             new_start_date = end_month + timedelta(days=1)
-            self.add_period_to_recover_in_portal(new_start_date,
-                                                 month_elapse - 1)
+            self.add_period_to_recover_in_portal(
+                new_start_date, month_elapse - 1, params_search)
 
     def insert_url_finder(self, data, params=None):
         try:
-            if params and isinstance(params, (dict,)):
+            if not isinstance(params, (dict,)):
                 params = {}
             data.update({'params': params})
             self.finder_urls_notas.insert(data)
         except DuplicateKeyError as e:
-            logger.error(e)
-            logger.debug("DuplicateKey on - %s", 'Finder Urls Notas')
+            logger_dao.error(e)
+            logger_dao.debug("DuplicateKey on - Finder Urls Notas")
 
     def random_finder_urls_notas(self, many_items):
         instances = self.finder_urls_notas.find()
@@ -241,6 +238,7 @@ class ProxiesDao(MongoClient):
         self.error_proxies = self.db_proxy.error_proxies
 
     def insert_proxies(self, list_proxy):
+        now = datetime.now()
         if not isinstance(list_proxy, (list, tuple)):
             list_proxy = [list_proxy]
 
@@ -248,13 +246,14 @@ class ProxiesDao(MongoClient):
             {
                 'in_use': False,
                 'proxy': x['proxy'],
-                'localization': x['localization']
+                'localization': x['localization'],
+                "last_date_in_use": int(now.strftime("%Y%m%d%H%M%S"))
             } for x in list_proxy
             ]
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        random_skip = random.randint(0, 200)
+        random_skip = random.randint(0, 120)
         now = datetime.now() - timedelta(minutes=10, seconds=30)
         list_proxy = self.proxies.find({
             'in_use': False,
@@ -266,7 +265,7 @@ class ProxiesDao(MongoClient):
             raise Exception('No one proxy is free in this moment')
 
         proxy = list_proxy[0]
-        logger.debug("Random Proxy choised are: %s", proxy)
+        logger_dao.debug("Random Proxy choised are: %s", proxy)
 
         self.proxies.update_one(
             {"_id": proxy['_id']}, {"$set": {"in_use": True}})
@@ -280,7 +279,7 @@ class ProxiesDao(MongoClient):
                                     "last_date_in_use": int(
                                         now.strftime("%Y%m%d%H%M%S"))
                                 }})
-        logger.debug('release key(%s)', key)
+        logger_dao.debug('release key(%s)', key)
         if error:
             proxy_error = self.proxies.find_one({"_id": key})
             self.error_proxies.insert_one({'payload': proxy_error})
@@ -293,7 +292,7 @@ class ProxiesDao(MongoClient):
                                      "last_date_in_use": int(
                                          now.strftime("%Y%m%d%H%M%S"))
                                  }})
-        logger.debug('Release key all proxies')
+        logger_dao.debug('Release key all proxies')
 
 
 class SystemConfigDao(MongoClient):

@@ -11,20 +11,12 @@ import sys
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
-level_debug = logging.DEBUG
-logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+from .utils import logger, level_debug
+from .utils.avoid_load_same_url import get_unique_urls
 
-from data_model.dao.mongodb import ProxiesDao, SystemConfigDao
-from scrap_request import load_url_from_queue, get_content_page
-from request_range_date import get_random_batch
+from .data_model.dao.mongodb import ProxiesDao, SystemConfigDao
+from .crawlers.scrap_request import load_url_from_queue, get_content_page
+from .crawlers.request_range_date import get_random_batch
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -69,7 +61,7 @@ if __name__ == '__main__':
     }
 
     logScheduller = logging.getLogger('Scrap_Ufal.Multiprocess')
-    logScheduller.setLevel(logging.DEBUG)
+    logScheduller.setLevel(level_debug)
 
     scheduler = BackgroundScheduler(
         logger=logScheduller, executors=executors, job_defaults=job_defaults)
@@ -86,6 +78,10 @@ if __name__ == '__main__':
     )
     url_on_finder_urls_notas = lambda: get_random_batch(1)
 
+    old_queue = lambda: get_unique_urls(collection='queue')
+    old_fallback = lambda: get_unique_urls(collection='fallback')
+    old_queue_loaded = lambda: get_unique_urls(collection='queue_loaded')
+
     try:
         if not args.ignore:
             visited_links = [url]
@@ -101,6 +97,13 @@ if __name__ == '__main__':
         url_on_fallback, trigger='interval', seconds=25)
     finder_urls_notas_job = scheduler.add_job(
         url_on_finder_urls_notas, trigger='interval', minutes=1, seconds=30)
+
+    older_queue_loaded = scheduler.add_job(
+        old_queue_loaded, trigger='cron', minute=1, hour=0)
+    older_queue = scheduler.add_job(
+        old_queue, trigger='cron', minute=2, hour=0)
+    older_fallback = scheduler.add_job(
+        old_fallback, trigger='cron', minute=3, hour=0)
     scheduler.start()
 
     fallback_job.modify(max_instances=1)
