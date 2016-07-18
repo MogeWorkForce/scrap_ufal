@@ -17,24 +17,26 @@ def feed_urls():
     month = 75
     start_date = datetime(2010, 5, 1)
 
-    params = [{
+    params = [
+    #     {
+    #     "fase": "PAG",
+    #     "codigoOS": 26000,
+    #     "codigoOrgao": 26262,
+    #     "codigoUG": "TOD",
+    #     "codigoED": 51,
+    #     "codigoFavorecido": None,
+    #     "consulta": "avancada"
+    # },
+    {
         "fase": "PAG",
         "codigoOS": 26000,
-        "codigoOrgao": 26262,
+        "codigoOrgao": 26241,
         "codigoUG": "TOD",
         "codigoED": 51,
         "codigoFavorecido": None,
         "consulta": "avancada"
     },
     # {
-    #     "fase": "PAG",
-    #     "codigoOS": 26000,
-    #     "codigoOrgao": 26241,
-    #     "codigoUG": "TOD",
-    #     "codigoED": 51,
-    #     "codigoFavorecido": None,
-    #     "consulta": "avancada"
-    # }, {
     #     "fase": "PAG",
     #     "codigoOS": 26000,
     #     "codigoOrgao": 26271,
