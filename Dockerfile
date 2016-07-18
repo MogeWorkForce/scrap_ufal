@@ -10,7 +10,6 @@ RUN apt-get autoremove -y && apt-get clean all
 RUN pip install -U pip setuptools
 
 COPY . /
-#ENV MODE=DOCKER
 
 RUN chmod +x *.sh
 RUN apt-get install -y python-dev python-gevent libevent-dev

@@ -1,32 +1,22 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
-from bottle import Bottle, run, request
-from gevent import monkey
-monkey.patch_all()
-from data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
-from datetime import date
 
 import functools
 import json
 import logging
-import time
 import os
+import time
+from datetime import date
 
-__author__ = 'hermogenes'
+from bottle import Bottle, run, request
+from gevent import monkey
 
-formatter = logging.Formatter(
-    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger("Scrap_Ufal")
-level_debug = logging.DEBUG
-logger.setLevel(level_debug)
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+monkey.patch_all()
+from ..utils import level_debug
+from ..data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
 
 logRest = logging.getLogger("Scrap_Ufal.RESTAPI")
-logRest.setLevel(logging.DEBUG)
+logRest.setLevel(level_debug)
 
 app = Bottle()
 app.patch = functools.partial(app.route, method='PATCH')
@@ -48,7 +38,7 @@ else:
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 
 
-@app.put(NAME_VERSION+"urls")
+@app.put(NAME_VERSION + "urls")
 def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
     if request.headers.get('Content-Type') != "application/json":
@@ -70,7 +60,7 @@ def insert_urls():
     return {"message": {"success": True}}
 
 
-@app.get(NAME_VERSION+"status/urls/<collection>")
+@app.get(NAME_VERSION + "status/urls/<collection>")
 def status_enqueue(collection):
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
 
@@ -79,12 +69,13 @@ def status_enqueue(collection):
     result = {"urls": []} if not result else result
     return {
         "message":
-        {"success": True, "result": "%s have: %s" %
-            (collection.upper(), len(result['urls']))}
+            {"success": True, "result": "%s have: %s" %
+                                        (collection.upper(),
+                                         len(result['urls']))}
     }
 
 
-@app.get(NAME_VERSION+"status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
+@app.get(NAME_VERSION + "status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
 def count_documents_last_days(start, end):
     return "%s - %s\n" % (start, end)
 
@@ -101,32 +92,30 @@ def home():
     pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
                 {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
 
-    documents_extrato = documents.documents.aggregate(pipeline)
+    documents_sumerized = documents.documents.aggregate(pipeline)
     result_docs = {'Total': 0}
-    for item in documents_extrato:
-        if isinstance(item['_id'], (list, tuple)):
-            result_docs[item['_id'][0]] = item['total']
-        else:
-            result_docs[item['_id']] = item['total']
+    for item in documents_sumerized:
+        result_docs[item['_id']] = item['total']
         result_docs['Total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
-    proxies_avaible = proxy_dao.proxies.find({"in_use": False}).count()
+    proxies_available = proxy_dao.proxies.find({"in_use": False}).count()
 
     result = {
         "urls": {
             "queue": len(result_queue['urls']) if result_queue else 0,
-            "queue_loaded": len(result_queue_loaded['urls']) if result_queue_loaded else 0,
+            "queue_loaded": len(
+                result_queue_loaded['urls']) if result_queue_loaded else 0,
             "fallback": len(result_fallback['urls']) if result_fallback else 0
         },
         "documents": result_docs,
         "proxies": {
             "in_use": proxies_in_use,
-            "avaible": proxies_avaible
+            "available": proxies_available
         }
     }
     return_msg = json.dumps(result, indent=3)
-    return_msg = "<pre>"+return_msg+"</pre>"
+    return_msg = "<pre>" + return_msg + "</pre>"
     return_msg += "<br>%.6f" % (time.time() - start)
     return_msg += "<script>setInterval(function() {location.reload(true)}, 20000);</script>"
     return return_msg
@@ -135,6 +124,7 @@ def home():
 def run_app():
     run(app, host='0.0.0.0', port=8080,
         debug=True, reloader=True, server='gevent')
+
 
 if __name__ == '__main__':
     run_app()
