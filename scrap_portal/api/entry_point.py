@@ -88,6 +88,7 @@ def home():
     result_queue = client.db_urls['queue'].find_one(key)
     result_queue_loaded = client.db_urls['queue_loaded'].find_one(key)
     result_fallback = client.db_urls['fallback'].find_one(key)
+    result_finder_urls = client.finder_urls_notas.find({}).count()
 
     pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
                 {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
@@ -106,7 +107,8 @@ def home():
             "queue": len(result_queue['urls']) if result_queue else 0,
             "queue_loaded": len(
                 result_queue_loaded['urls']) if result_queue_loaded else 0,
-            "fallback": len(result_fallback['urls']) if result_fallback else 0
+            "fallback": len(result_fallback['urls']) if result_fallback else 0,
+            "finder_urls": result_finder_urls
         },
         "documents": result_docs,
         "proxies": {
@@ -116,7 +118,7 @@ def home():
     }
     return_msg = json.dumps(result, indent=3)
     return_msg = "<pre>" + return_msg + "</pre>"
-    return_msg += "<br>%.6f" % (time.time() - start)
+    return_msg += "<br>elapse: %.6f" % (time.time() - start)
     return_msg += "<script>setInterval(function() {location.reload(true)}, 20000);</script>"
     return return_msg
 
