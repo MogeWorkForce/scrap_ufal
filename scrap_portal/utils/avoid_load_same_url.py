@@ -31,13 +31,20 @@ def get_unique_urls(collection='queue_loaded'):
     min_day_get_urls = now - timedelta(days=int(number_days))
     query = {
         "_id": {
-            "$gte": min_day_get_urls.strftime(url_dao.PATTERN_PK),
-            "$lt": now.strftime(url_dao.PATTERN_PK)
+            "$gte": int(min_day_get_urls.strftime(url_dao.PATTERN_PK)),
+            "$lt": int(now.strftime(url_dao.PATTERN_PK))
         }
     }
     for url in url_dao.db_urls[collection].find(query):
-        url_dao.set_chunk_url(url['urls'], collection)
+        urls = url.get('urls', [])
+        logger.debug('Moved: %d urls', len(urls))
+        url_dao.set_chunk_url(urls, collection)
 
     many_days_erased = url_dao.db_urls[collection].delete_many(query)
     logger.debug(
         'How many days are dropped: %d', many_days_erased.deleted_count)
+
+if __name__ == '__main__':
+    get_unique_urls('queue_loaded')
+    get_unique_urls('queue')
+    get_unique_urls('fallback')
