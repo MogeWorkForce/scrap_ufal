@@ -94,7 +94,8 @@ def recover_analyzed_document(doc_id):
 
     json_response = {
         'time_analyze_ms': doc_found['time_analyze_ms'],
-        'errors': doc_found['errors']
+        'errors': doc_found['errors'],
+        'url': doc_found['geral_data']['url']
     }
 
     return json_response
