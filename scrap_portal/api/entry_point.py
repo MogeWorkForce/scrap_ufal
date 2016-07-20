@@ -13,6 +13,7 @@ from gevent import monkey
 
 monkey.patch_all()
 from ..utils import level_debug
+from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
 
 logRest = logging.getLogger("Scrap_Ufal.RESTAPI")
@@ -28,11 +29,11 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'PROD':
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
-    documents = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
+    docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
     client = UrlManagerDao(host='172.17.0.1')
-    documents = DocumentsDao(host='172.17.0.1')
+    docs_dao = DocumentsDao(host='172.17.0.1')
     proxy_dao = ProxiesDao(host='172.17.0.1')
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
@@ -79,6 +80,26 @@ def count_documents_last_days(start, end):
     return "%s - %s\n" % (start, end)
 
 
+@app.route(NAME_VERSION + 'errors_code/', method="OPTIONS")
+def get_list_errors():
+    return VERBOSE_ERROR_TYPE
+
+
+@app.get(NAME_VERSION + 'analyze_document/<doc_id:re:\d{4}\w{2}\d{6}>/')
+def recover_analyzed_document(doc_id):
+    doc_found = docs_dao.documents.find_one({"_id": doc_id, "analysed": True})
+    if not doc_found:
+        return 'aqui eu mando uma mensagem informando pra adiconar X, Y, Z' \
+               'parametros para adicionar na queue esse documento'
+
+    json_response = {
+        'time_analyze_ms': doc_found['time_analyze_ms'],
+        'errors': doc_found['errors']
+    }
+
+    return json_response
+
+
 @app.get("/")
 def home():
     start = time.time()
@@ -92,7 +113,7 @@ def home():
     pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
                 {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
 
-    documents_sumerized = documents.documents.aggregate(pipeline)
+    documents_sumerized = docs_dao.documents.aggregate(pipeline)
     result_docs = {'Total': 0}
     for item in documents_sumerized:
         result_docs[item['_id']] = item['total']

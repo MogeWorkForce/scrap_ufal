@@ -6,12 +6,12 @@ import logging
 import os
 import traceback
 from collections import defaultdict
+from datetime import datetime
 
 from ..utils import normalize_text, level_debug
 from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
-
 
 logger_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_analysis.setLevel(level_debug)
@@ -34,6 +34,7 @@ def analysis_bidding_mode():
     total = 0
     total_error = 0
     for role in docs_dao.roles.find():
+
         type_bidding = role['_id']
         logger_analysis.debug('-' * 20)
         logger_analysis.debug(
@@ -41,6 +42,7 @@ def analysis_bidding_mode():
             type_bidding)
         correct_bidding = normalize_text(type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])):
+            time_start_analysis = datetime.now()
             logger_analysis.debug(doc['_id'])
             mod_licitacao = doc['dados_detalhados']['modalidade_de_licitacao']
             if isinstance(mod_licitacao, (tuple, list)):
@@ -94,12 +96,13 @@ def analysis_bidding_mode():
 
             if error_this_doc:
                 error_founded[doc['_id']] = error_this_doc
-                docs_dao.inform_analysed_docs(doc['_id'], error_this_doc)
                 total_error += 1
             else:
                 correct_founded[doc['_id']] = doc['geral_data']['url']
                 total_correct += 1
 
+            docs_dao.inform_analysed_docs(
+                doc['_id'], error_this_doc, time_start_analysis)
             total += 1
 
         logger_analysis.debug('-' * 20)
