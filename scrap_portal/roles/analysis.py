@@ -64,6 +64,10 @@ def analysis_bidding_mode():
             else:
                 logger_analysis.debug("Modalidade de Licitação Errada!")
 
+                if normalize_text(mod_licitacao) == 'pregao':
+                    logger_analysis.critical(
+                        "Modalidade de licitação não prevista para análise")
+
                 error_this_doc.append({
                     'code': WRONG_BIDDING,
                     'error': VERBOSE_ERROR_TYPE[WRONG_BIDDING],
@@ -221,6 +225,10 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
 
         if cancel_purge == 'sim':
             value *= -1  # Se estorno/cancelamento, o valor será decrementado
+
+        logger_analysis.debug(
+            "(%s)-- %.2f para o documento: %s",
+            nota_pagamento['_id'], value, doc_empenho_id)
         return value
     except ValueError:
         traceback.print_exc()

@@ -47,7 +47,7 @@ if __name__ == '__main__':
         if not args.url:
             raise Exception("Url not passed, please set a url in arguments")
     else:
-        logger.warning("Start ignoring url passed on parameter")
+        logger.warn("Start ignoring url passed on parameter")
 
     executors = {
         'default': ThreadPoolExecutor(10),
@@ -119,7 +119,7 @@ if __name__ == '__main__':
             fallback_active = config['fallback']
             finder_urls_notas_active = config['url_on_finder_urls_notas']
             if not system_up:
-                logScheduller.warning(
+                logScheduller.warn(
                     "The Jobs will be shutdown in few moments")
                 sys.exit(0)
 

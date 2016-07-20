@@ -21,7 +21,7 @@ def feed_urls():
     #     {
     #     "fase": "PAG",
     #     "codigoOS": 26000,
-    #     "codigoOrgao": 26262,
+    #     "codigoOrgao": 26262, #SP
     #     "codigoUG": "TOD",
     #     "codigoED": 51,
     #     "codigoFavorecido": None,
@@ -30,7 +30,7 @@ def feed_urls():
     {
         "fase": "PAG",
         "codigoOS": 26000,
-        "codigoOrgao": 26241,
+        "codigoOrgao": 26241, #PARANA
         "codigoUG": "TOD",
         "codigoED": 51,
         "codigoFavorecido": None,
@@ -39,7 +39,16 @@ def feed_urls():
     # {
     #     "fase": "PAG",
     #     "codigoOS": 26000,
-    #     "codigoOrgao": 26271,
+    #     "codigoOrgao": 26271,  #BRASILIA
+    #     "codigoUG": "TOD",
+    #     "codigoED": 51,
+    #     "codigoFavorecido": None,
+    #     "consulta": "avancada"
+    # },
+    # {
+    #     "fase": "PAG",
+    #     "codigoOS": 26000,
+    #     "codigoOrgao": 26270, #Amazonas
     #     "codigoUG": "TOD",
     #     "codigoED": 51,
     #     "codigoFavorecido": None,

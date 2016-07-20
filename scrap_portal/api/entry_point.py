@@ -42,7 +42,7 @@ NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
     if request.headers.get('Content-Type') != "application/json":
-        logRest.warning("Invalid Content-Type")
+        logRest.warn("Invalid Content-Type")
         body_error['message']['errors'].append("Invalid Content-Type")
         return body_error
 
@@ -52,9 +52,8 @@ def insert_urls():
         list_urls = data['urls']
         client.set_chunk_url(list_urls)
     except Exception as e:
-        error_msg = str(e)
-        logRest.warning(error_msg)
-        body_error['message']['errors'].append(error_msg)
+        logRest.error("Some error are happens", exc_info=True)
+        body_error['message']['errors'].append(str(e))
         return body_error
 
     return {"message": {"success": True}}

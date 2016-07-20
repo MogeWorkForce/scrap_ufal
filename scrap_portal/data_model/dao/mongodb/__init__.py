@@ -84,9 +84,12 @@ class DocumentsDao(MongoClient):
         return doc
 
     def inform_analysed_docs(self, doc_id, error_list):
+        fields = {"analysed": True}
+        if error_list:
+            fields.update({"errors": error_list})
         self.documents.update_one(
             {"_id": doc_id},
-            {"$set": {"errors": error_list, "analysed": True}}
+            {"$set": fields}
         )
 
 

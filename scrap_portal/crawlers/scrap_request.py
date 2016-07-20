@@ -318,7 +318,7 @@ def load_url_from_queue(batch=1, collection='queue'):
         length_urls = len(urls_load['urls'])
 
         if length_urls <= 0:
-            logger.warning(
+            logger.warn(
                 "(%s) Finish the Process all Urls", collection.upper())
             return
         elif length_urls == 1:
@@ -345,11 +345,11 @@ def load_url_from_queue(batch=1, collection='queue'):
                     get_content_page(url)
                     client.url.dynamic_url('queue_loaded', url)
                 else:
-                    logger.warning("Url already loaded: %s", url)
+                    logger.warn("Url already loaded: %s", url)
             except:
                 traceback.print_exc()
                 client.url.dynamic_url('fallback', url)
-                logger.warning("Call Fallback to Url: %s", url)
+                logger.warn("Call Fallback to Url: %s", url)
 
         try:
             client.url.remove_urls(tmp_urls_load, collection=collection)
@@ -357,7 +357,7 @@ def load_url_from_queue(batch=1, collection='queue'):
                          collection.upper(), batch)
         except Exception as e:
             traceback.print_exc()
-            logger.warning("Error on remove urls")
+            logger.warn("Error on remove urls")
 
     except:
         traceback.print_exc()
