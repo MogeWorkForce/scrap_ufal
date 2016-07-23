@@ -89,6 +89,8 @@ if __name__ == '__main__':
             get_content_page(url, visited_links=visited_links)
         else:
             get_random_batch(batch_size=1)
+            logger.debug('Call Analysis!')
+            analysis_bidding_mode()
     except Exception as e:
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
@@ -110,12 +112,13 @@ if __name__ == '__main__':
 
     # Call Roles
     roles_ = scheduler.add_job(
-        analysis_bidding_mode, trigger='inteval', minutes=30)
+        analysis_bidding_mode, trigger='interval', minutes=30)
 
     scheduler.start()
 
     fallback_job.modify(max_instances=1)
     finder_urls_notas_job.modify(max_instances=1)
+    roles_.modify(max_instances=1)
 
     try:
         while True:
