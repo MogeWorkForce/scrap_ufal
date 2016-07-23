@@ -12,7 +12,7 @@ from bottle import Bottle, run, request
 from gevent import monkey
 
 monkey.patch_all()
-from ..utils import level_debug
+from ..utils import level_debug, normalize_text
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
 
@@ -134,10 +134,10 @@ def home():
                 {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
 
     documents_sumerized = docs_dao.documents.aggregate(pipeline)
-    result_docs = {'Total': 0}
+    result_docs = {'total': 0}
     for item in documents_sumerized:
-        result_docs[item['_id']] = item['total']
-        result_docs['Total'] += item['total']
+        result_docs[normalize_text(item['_id'])] = item['total']
+        result_docs['total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
     proxies_available = proxy_dao.proxies.find({"in_use": False}).count()
