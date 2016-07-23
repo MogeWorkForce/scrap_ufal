@@ -13,6 +13,7 @@ from ..utils import normalize_text, level_debug
 from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
+from ..utils.send_email import send_email
 
 match_cancel = re.compile(r'(?P<cancel_incorreto>cancelamento|incorreto|nao_corresponde)')
 
@@ -26,11 +27,15 @@ formatter = logging.Formatter(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-handler = logging.FileHandler(BASE_DIR+'/analysis.log', mode='w+')
+LOG_FILE = BASE_DIR+'/analysis.log'
+handler = logging.FileHandler(LOG_FILE, mode='w+')
 handler.setFormatter(formatter)
 logger_analysis.addHandler(handler)
 
 from ..data_model.dao.mongodb import DocumentsDao
+
+RECIPIENTS_EMAIL = os.environ.get('RECIPIENTS_EMAIL', '["exemogenes@gmail.com"]')
+RECIPIENTS_EMAIL = json.loads(RECIPIENTS_EMAIL)
 
 MODE = os.environ.get('MODE')
 if MODE == 'PROD':
@@ -125,6 +130,11 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
+    send_email(
+        RECIPIENTS_EMAIL,
+        'Logs das informacões analisadas'.encode(encoding='utf-8'),
+        "Log das análises recentemente concluídas".encode(encoding='utf-8'),
+        LOG_FILE)
     # logger_analysis.debug("Corretas Encontrados: %s",
     #                       json.dumps(correct_founded, indent=2))
 

@@ -68,7 +68,7 @@ def insert_urls():
 def options_urls():
     return {
         "Content-Type": "application/json",
-        "urls": { "type": "str/list"}
+        "urls": {"type": "str/list"}
     }
 
 
@@ -154,14 +154,10 @@ def home():
         "proxies": {
             "in_use": proxies_in_use,
             "available": proxies_available
-        }
+        },
+        "time_ms": "%.6f" % (time.time() - start)
     }
-    return_msg = json.dumps(result, indent=3)
-    return_msg = "<pre>" + return_msg + "</pre>"
-    return_msg += "<br>elapse: %.6f" % (time.time() - start)
-    return_msg += "<script>setInterval(function()"
-    return_msg += " {location.reload(true)}, 20000);</script>"
-    return return_msg
+    return result
 
 
 def run_app():
