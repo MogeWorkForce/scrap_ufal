@@ -14,9 +14,10 @@ from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from .utils import logger, level_debug
 from .utils.avoid_load_same_url import get_unique_urls
 
-from .data_model.dao.mongodb import ProxiesDao, SystemConfigDao
 from .crawlers.scrap_request import load_url_from_queue, get_content_page
 from .crawlers.request_range_date import get_random_batch
+from .data_model.dao.mongodb import ProxiesDao, SystemConfigDao
+from .roles.analysis import analysis_bidding_mode
 
 MODE = os.environ.get('MODE', 'DEV')
 
@@ -47,7 +48,7 @@ if __name__ == '__main__':
         if not args.url:
             raise Exception("Url not passed, please set a url in arguments")
     else:
-        logger.warning("Start ignoring url passed on parameter")
+        logger.warn("Start ignoring url passed on parameter")
 
     executors = {
         'default': ThreadPoolExecutor(10),
@@ -92,18 +93,25 @@ if __name__ == '__main__':
         traceback.print_exc()
         logger.debug("Error on load content on url passed")
 
+    # Process queues of urls to get content
     queue_job = scheduler.add_job(url_on_queue, trigger='interval', seconds=15)
     fallback_job = scheduler.add_job(
         url_on_fallback, trigger='interval', seconds=25)
     finder_urls_notas_job = scheduler.add_job(
         url_on_finder_urls_notas, trigger='interval', minutes=1, seconds=30)
 
+    # get older urls
     older_queue_loaded = scheduler.add_job(
         old_queue_loaded, trigger='cron', minute=1, hour=0)
     older_queue = scheduler.add_job(
         old_queue, trigger='cron', minute=2, hour=0)
     older_fallback = scheduler.add_job(
         old_fallback, trigger='cron', minute=3, hour=0)
+
+    # Call Roles
+    roles_ = scheduler.add_job(
+        analysis_bidding_mode, trigger='inteval', minutes=30)
+
     scheduler.start()
 
     fallback_job.modify(max_instances=1)
@@ -119,7 +127,7 @@ if __name__ == '__main__':
             fallback_active = config['fallback']
             finder_urls_notas_active = config['url_on_finder_urls_notas']
             if not system_up:
-                logScheduller.warning(
+                logScheduller.warn(
                     "The Jobs will be shutdown in few moments")
                 sys.exit(0)
 

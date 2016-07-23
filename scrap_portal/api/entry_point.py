@@ -12,7 +12,8 @@ from bottle import Bottle, run, request
 from gevent import monkey
 
 monkey.patch_all()
-from ..utils import level_debug
+from ..utils import level_debug, normalize_text
+from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..data_model.dao.mongodb import UrlManagerDao, DocumentsDao, ProxiesDao
 
 logRest = logging.getLogger("Scrap_Ufal.RESTAPI")
@@ -28,11 +29,11 @@ MODE = os.environ.get('MODE', 'DEV')
 
 if MODE == 'PROD':
     client = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
-    documents = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
+    docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
     client = UrlManagerDao(host='172.17.0.1')
-    documents = DocumentsDao(host='172.17.0.1')
+    docs_dao = DocumentsDao(host='172.17.0.1')
     proxy_dao = ProxiesDao(host='172.17.0.1')
 
 NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
@@ -42,22 +43,33 @@ NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
     if request.headers.get('Content-Type') != "application/json":
-        logRest.warning("Invalid Content-Type")
-        body_error['message']['errors'].append("Invalid Content-Type")
+        logRest.warn("Invalid Content-Type")
+        body_error['message']['errors'].append(
+            "Content-Type inválido. Deve ser 'application/json'")
         return body_error
 
     data = request.json
 
     try:
         list_urls = data['urls']
+        if isinstance(list_urls, str):
+            list_urls = [list_urls]
+
         client.set_chunk_url(list_urls)
     except Exception as e:
-        error_msg = str(e)
-        logRest.warning(error_msg)
-        body_error['message']['errors'].append(error_msg)
+        logRest.error("Some error are happens", exc_info=True)
+        body_error['message']['errors'].append(str(e))
         return body_error
 
     return {"message": {"success": True}}
+
+
+@app.put(NAME_VERSION + "urls")
+def options_urls():
+    return {
+        "Content-Type": "application/json",
+        "urls": {"type": "str/list"}
+    }
 
 
 @app.get(NAME_VERSION + "status/urls/<collection>")
@@ -80,6 +92,34 @@ def count_documents_last_days(start, end):
     return "%s - %s\n" % (start, end)
 
 
+@app.route(NAME_VERSION + 'errors_code/', method="OPTIONS")
+def get_list_errors():
+    return VERBOSE_ERROR_TYPE
+
+
+@app.get(NAME_VERSION + 'analyze_document/<doc_id:re:\d{4}\w{2}\d{6}>/')
+def recover_analyzed_document(doc_id):
+    host = request["HTTP_HOST"]+NAME_VERSION + "urls"
+    doc_found = docs_dao.documents.find_one({"_id": doc_id, "analysed": True})
+    if not doc_found:
+        return {
+            "message": "Infelizmente ainda não indexamos esta Nota de Empenho"
+            " ou com as atuais regras em vigor, não seja possível analisá-la."
+            " Porém, ajude-nos a fiscalizar, envie um POST para: %s com a Url deste "
+            "documento. E nós faremos o resto!" % host,
+            "use_this_url": host,
+            "success": False
+        }
+
+    json_response = {
+        'time_analyze_ms': doc_found['time_analyze_ms'],
+        'errors': doc_found['errors'],
+        'url': doc_found['geral_data']['url']
+    }
+
+    return {"message": json_response, "success": True}
+
+
 @app.get("/")
 def home():
     start = time.time()
@@ -93,11 +133,11 @@ def home():
     pipeline = [{'$project': {'_id': '$dados_basicos.fase'}},
                 {'$group': {'_id': '$_id', 'total': {'$sum': 1}}}]
 
-    documents_sumerized = documents.documents.aggregate(pipeline)
-    result_docs = {'Total': 0}
+    documents_sumerized = docs_dao.documents.aggregate(pipeline)
+    result_docs = {'total': 0}
     for item in documents_sumerized:
-        result_docs[item['_id']] = item['total']
-        result_docs['Total'] += item['total']
+        result_docs[normalize_text(item['_id'])] = item['total']
+        result_docs['total'] += item['total']
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
     proxies_available = proxy_dao.proxies.find({"in_use": False}).count()
@@ -114,13 +154,10 @@ def home():
         "proxies": {
             "in_use": proxies_in_use,
             "available": proxies_available
-        }
+        },
+        "time_ms": "%.6f" % (time.time() - start)
     }
-    return_msg = json.dumps(result, indent=3)
-    return_msg = "<pre>" + return_msg + "</pre>"
-    return_msg += "<br>elapse: %.6f" % (time.time() - start)
-    return_msg += "<script>setInterval(function() {location.reload(true)}, 20000);</script>"
-    return return_msg
+    return result
 
 
 def run_app():

@@ -83,10 +83,18 @@ class DocumentsDao(MongoClient):
         doc = remove_list(doc)
         return doc
 
-    def inform_analysed_docs(self, doc_id, error_list):
+    def inform_analysed_docs(self, doc_id, error_list, time_start_analysis):
+
+        fields = {
+            "analysed": True,
+            "time_analyze_ms": (
+                datetime.now() - time_start_analysis).total_seconds()*1000.0,
+            "errors": error_list
+        }
+        logger.debug(fields)
         self.documents.update_one(
             {"_id": doc_id},
-            {"$set": {"errors": error_list, "analysed": True}}
+            {"$set": fields}
         )
 
 

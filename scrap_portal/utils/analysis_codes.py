@@ -7,7 +7,8 @@ WRONG_BIDDING = 21
 EXCEDED_LIMIT_OF_PAYMENTS = 22
 
 VERBOSE_ERROR_TYPE = {
-    NULL_VALUE_EMPENHADO: "Nota de Empenho com valor 0 após checkar o limite.",
+    NULL_VALUE_EMPENHADO: "Nota de Empenho com valor 0 após checkar o "
+                                                "limite de pagamento da Nota de Empenho.",
     BIDDING_NOT_FOUND: "Modalide de Licitação não Encontrada.",
     WRONG_BIDDING: "Modalide de Licitação Errada",
     EXCEDED_LIMIT_OF_PAYMENTS: "Excedeu o limite de pagamento",
