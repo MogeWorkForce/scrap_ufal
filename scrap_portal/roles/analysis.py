@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import logging
 import os
+import re
 import traceback
 from collections import defaultdict
 from datetime import datetime
@@ -13,8 +14,21 @@ from ..utils.analysis_codes import NULL_VALUE_EMPENHADO, BIDDING_NOT_FOUND
 from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
 
+match_cancel = re.compile(r'(?P<cancel_incorreto>cancelamento|incorreto|nao_corresponde)')
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+
 logger_analysis = logging.getLogger("Scrap_Ufal.data_analysis")
 logger_analysis.setLevel(level_debug)
+
+formatter = logging.Formatter(
+    "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+handler = logging.FileHandler(BASE_DIR+'/analysis.log', mode='w+')
+handler.setFormatter(formatter)
+logger_analysis.addHandler(handler)
 
 from ..data_model.dao.mongodb import DocumentsDao
 
@@ -111,8 +125,8 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
-    logger_analysis.debug("Corretas Encontrados: %s",
-                          json.dumps(correct_founded, indent=2))
+    # logger_analysis.debug("Corretas Encontrados: %s",
+    #                       json.dumps(correct_founded, indent=2))
 
 
 def check_exceded_amount(doc):
@@ -128,40 +142,38 @@ def check_exceded_amount(doc):
         type_species_of_bidding = normalize_text(item['especie'])
         if type_bidding_relational_docs == 'pagamento':
             logger_analysis.debug('--- %s', item['documento'])
-            if 'OB' not in item['documento']:
-                notas_pagamento += item['valor_rs']
+
+            logger_analysis.debug(
+                "Check se já está indexado ou colocar a url na QUEUE, para "
+                "ser recuperado e processado o conteúdo: %s",
+                item['documento'])
+            payment_in_analyses = docs_dao.documents.find_one({
+                "_id": item['documento']
+            })
+            if payment_in_analyses:
+                notas_pagamento += retrieve_payment_by_empenho(
+                    payment_in_analyses, doc_id)
             else:
                 logger_analysis.debug(
-                    "Check se já está indexado ou colocar a url na QUEUE, para "
-                    "ser recuperado e processado o conteúdo: %s",
-                    item['documento'])
-                payment_in_analyses = docs_dao.documents.find_one({
-                    "_id": item['documento']
-                })
-                if payment_in_analyses:
-                    notas_pagamento += retrieve_payment_by_empenho(
-                        payment_in_analyses, doc_id)
-                else:
+                    "Coloque essa url na QUEUE para ser para ter seus dados"
+                    " coletados no futuro.")
+
+                value = item['valor_rs']
+                logger_analysis.debug(item['especie'])
+                if 'OBS ' in item['especie']:
                     logger_analysis.debug(
-                        "Coloque essa url na QUEUE para ser para ter seus dados"
-                        " coletados no futuro.")
+                        'Encontrado "OBS" (Tipo de Ordem Bancaria) dentro '
+                        'da coluna Espécie. Valor será subtraído.')
+                    value *= -1
 
-                    value = item['valor_rs']
-                    logger_analysis.debug(item['especie'])
-                    if 'OBS ' in item['especie']:
-                        logger_analysis.debug(
-                            'Encontrado "OBS" (Tipo de Ordem Bancaria) dentro '
-                            'da coluna Espécie. Valor será subtraído.')
-                        value *= -1
-
-                    notas_pagamento += item['valor_rs']
-                    unidade_gestora_emitente = get_only_numbers(
-                        basic_data['unidade_gestora_emitente'])
-                    gestao = get_only_numbers(basic_data['gestao'])
-                    url = pattern_url % (
-                        unidade_gestora_emitente, gestao, item['documento'])
-                    logger_analysis.debug('url: "%s"', url)
-                    docs_dao.url.dynamic_url('queue', url)
+                notas_pagamento += item['valor_rs']
+                unidade_gestora_emitente = get_only_numbers(
+                    basic_data['unidade_gestora_emitente'])
+                gestao = get_only_numbers(basic_data['gestao'])
+                url = pattern_url % (
+                    unidade_gestora_emitente, gestao, item['documento'])
+                logger_analysis.debug('url: "%s"', url)
+                docs_dao.url.dynamic_url('queue', url)
 
         elif type_bidding_relational_docs == 'empenho':
             if type_species_of_bidding in ['anulacao', 'cancelamento']:
@@ -213,6 +225,7 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
     try:
         value = 0
         cancel_purge = 'nao'
+        basic_data = nota_pagamento['dados_basicos']
         data_details = nota_pagamento['dados_detalhados']
         documents_detail = data_details['detalhamento_do_documento']
         if isinstance(documents_detail['empenho'], list):
@@ -225,6 +238,14 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
             value = documents_detail['valor_rs']
             cancel_purge = normalize_text(
                 documents_detail['cancelamento_estorno'])
+
+        obs_document = normalize_text(data_details['observacao_do_documento'])
+        founded_cancel_incorrect = match_cancel.findall(obs_document)
+        logger_analysis.debug(obs_document)
+        logger_analysis.debug(founded_cancel_incorrect)
+        if founded_cancel_incorrect:
+            value = basic_data['valor']
+            cancel_purge = 'sim'
 
         if cancel_purge == 'sim':
             value *= -1  # Se estorno/cancelamento, o valor será decrementado

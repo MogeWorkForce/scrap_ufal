@@ -44,13 +44,17 @@ def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
     if request.headers.get('Content-Type') != "application/json":
         logRest.warn("Invalid Content-Type")
-        body_error['message']['errors'].append("Invalid Content-Type")
+        body_error['message']['errors'].append(
+            "Content-Type inválido. Deve ser 'application/json'")
         return body_error
 
     data = request.json
 
     try:
         list_urls = data['urls']
+        if isinstance(list_urls, str):
+            list_urls = [list_urls]
+
         client.set_chunk_url(list_urls)
     except Exception as e:
         logRest.error("Some error are happens", exc_info=True)
@@ -58,6 +62,14 @@ def insert_urls():
         return body_error
 
     return {"message": {"success": True}}
+
+
+@app.put(NAME_VERSION + "urls")
+def options_urls():
+    return {
+        "Content-Type": "application/json",
+        "urls": { "type": "str/list"}
+    }
 
 
 @app.get(NAME_VERSION + "status/urls/<collection>")
@@ -87,10 +99,17 @@ def get_list_errors():
 
 @app.get(NAME_VERSION + 'analyze_document/<doc_id:re:\d{4}\w{2}\d{6}>/')
 def recover_analyzed_document(doc_id):
+    host = request["HTTP_HOST"]+NAME_VERSION + "urls"
     doc_found = docs_dao.documents.find_one({"_id": doc_id, "analysed": True})
     if not doc_found:
-        return 'aqui eu mando uma mensagem informando pra adiconar X, Y, Z' \
-               'parametros para adicionar na queue esse documento'
+        return {
+            "message": "Infelizmente ainda não indexamos esta Nota de Empenho"
+            " ou com as atuais regras em vigor, não seja possível analisá-la."
+            " Porém, ajude-nos a fiscalizar, envie um POST para: %s com a Url deste "
+            "documento. E nós faremos o resto!" % host,
+            "use_this_url": host,
+            "success": False
+        }
 
     json_response = {
         'time_analyze_ms': doc_found['time_analyze_ms'],
@@ -98,7 +117,7 @@ def recover_analyzed_document(doc_id):
         'url': doc_found['geral_data']['url']
     }
 
-    return json_response
+    return {"message": json_response, "success": True}
 
 
 @app.get("/")
@@ -140,7 +159,8 @@ def home():
     return_msg = json.dumps(result, indent=3)
     return_msg = "<pre>" + return_msg + "</pre>"
     return_msg += "<br>elapse: %.6f" % (time.time() - start)
-    return_msg += "<script>setInterval(function() {location.reload(true)}, 20000);</script>"
+    return_msg += "<script>setInterval(function()"
+    return_msg += " {location.reload(true)}, 20000);</script>"
     return return_msg
 
 

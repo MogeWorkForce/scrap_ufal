@@ -88,11 +88,10 @@ class DocumentsDao(MongoClient):
         fields = {
             "analysed": True,
             "time_analyze_ms": (
-                datetime.now() - time_start_analysis).total_seconds()*1000.0
+                datetime.now() - time_start_analysis).total_seconds()*1000.0,
+            "errors": error_list
         }
         logger.debug(fields)
-        if error_list:
-            fields.update({"errors": error_list})
         self.documents.update_one(
             {"_id": doc_id},
             {"$set": fields}

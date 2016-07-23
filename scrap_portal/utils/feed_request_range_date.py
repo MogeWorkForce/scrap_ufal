@@ -27,24 +27,24 @@ def feed_urls():
     #     "codigoFavorecido": None,
     #     "consulta": "avancada"
     # },
-    {
-        "fase": "PAG",
-        "codigoOS": 26000,
-        "codigoOrgao": 26241, #PARANA
-        "codigoUG": "TOD",
-        "codigoED": 51,
-        "codigoFavorecido": None,
-        "consulta": "avancada"
-    },
     # {
     #     "fase": "PAG",
     #     "codigoOS": 26000,
-    #     "codigoOrgao": 26271,  #BRASILIA
+    #     "codigoOrgao": 26241, #PARANA
     #     "codigoUG": "TOD",
     #     "codigoED": 51,
     #     "codigoFavorecido": None,
     #     "consulta": "avancada"
     # },
+    {
+        "fase": "PAG",
+        "codigoOS": 26000,
+        "codigoOrgao": 26271,  #BRASILIA
+        "codigoUG": "TOD",
+        "codigoED": 51,
+        "codigoFavorecido": None,
+        "consulta": "avancada"
+    },
     # {
     #     "fase": "PAG",
     #     "codigoOS": 26000,

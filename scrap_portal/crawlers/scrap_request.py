@@ -327,12 +327,10 @@ def load_url_from_queue(batch=1, collection='queue'):
             init_ = random.randint(0, length_urls + 1)
             if init_ + batch >= length_urls:
                 init_ -= batch
+                init_ = init_ if init_ > 0 else 0
 
-        logger.debug("(%s) Interval %s to %s",
-                     collection.upper(),
-                     init_,
-                     init_ + batch
-                     )
+        logger.debug(
+            "(%s) Interval %s to %s", collection.upper(), init_, init_ + batch)
         tmp_urls_load = urls_load['urls'][init_:init_ + batch]
 
         for url in tmp_urls_load:
