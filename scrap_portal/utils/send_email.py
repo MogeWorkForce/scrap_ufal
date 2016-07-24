@@ -31,6 +31,7 @@ def send_email(recipients, message, subject, file_name=None):
         part.add_header(
             'Content-Disposition', 'attachment', filename=file_name_sended)
         msg.attach(part)
+        os.remove(file_name)
 
     server = smtplib.SMTP("smtp.gmail.com:587")
     server.ehlo()
