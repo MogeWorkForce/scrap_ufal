@@ -28,7 +28,7 @@ formatter = logging.Formatter(
 )
 
 LOG_FILE = BASE_DIR+'/analysis.log'
-handler = logging.FileHandler(LOG_FILE, mode='w+')
+handler = logging.FileHandler(LOG_FILE, mode='w')
 handler.setFormatter(formatter)
 logger_analysis.addHandler(handler)
 

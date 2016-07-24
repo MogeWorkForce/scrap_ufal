@@ -25,7 +25,8 @@ def send_email(recipients, message, subject, file_name=None):
     if file_name:
         part = MIMEText("Arquivo anexado aqui.")
         msg.attach(part)
-        part = MIMEApplication(open(file_name, "rb").read())
+        with open(file_name, "rb") as file_opened:
+            part = MIMEApplication(file_opened.read())
         file_name_sended = file_name.split('/')[-1]
         part.add_header(
             'Content-Disposition', 'attachment', filename=file_name_sended)
