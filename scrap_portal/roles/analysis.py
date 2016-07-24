@@ -151,7 +151,7 @@ def check_exceded_amount(doc):
         type_bidding_relational_docs = normalize_text(item['fase'])
         type_species_of_bidding = normalize_text(item['especie'])
         if type_bidding_relational_docs == 'pagamento':
-            logger_analysis.debug('--- %s', item['documento'])
+            # logger_analysis.debug('--- %s', item['documento'])
 
             logger_analysis.debug(
                 "Check se já está indexado ou colocar a url na QUEUE, para "
@@ -169,7 +169,7 @@ def check_exceded_amount(doc):
                     " coletados no futuro.")
 
                 value = item['valor_rs']
-                logger_analysis.debug(item['especie'])
+                # logger_analysis.debug(item['especie'])
                 if 'OBS ' in item['especie']:
                     logger_analysis.debug(
                         'Encontrado "OBS" (Tipo de Ordem Bancaria) dentro '
@@ -251,8 +251,6 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
 
         obs_document = normalize_text(data_details['observacao_do_documento'])
         founded_cancel_incorrect = match_cancel.findall(obs_document)
-        logger_analysis.debug(obs_document)
-        logger_analysis.debug(founded_cancel_incorrect)
         if founded_cancel_incorrect:
             value = basic_data['valor']
             cancel_purge = 'sim'
