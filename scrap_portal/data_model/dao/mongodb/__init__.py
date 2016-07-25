@@ -47,15 +47,15 @@ class DocumentsDao(MongoClient):
     def insert_document(self, doc, upsert=False):
         try:
             date_ = date.today()
-            key = {"_id": doc['dados_basicos']['documento'][0]}
-            doc = self.adapt_docs_relacionados(doc)
-            doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
-            self.documents.replace_one(key, doc, upsert=upsert)
-            logger_dao.debug(('save:', key))
             url_ = doc['geral_data']['url_base'] + '/'
             url_ += doc['geral_data']['session'] + "/"
             url_ += doc['geral_data']['type_doc']
             url_ += '?documento=' + doc['geral_data']['num_doc']
+            key = {"_id": url_}
+            doc = self.adapt_docs_relacionados(doc)
+            doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
+            self.documents.replace_one(key, doc, upsert=upsert)
+            logger_dao.debug(('save:', key))
             self.url.dynamic_url('queue', url_)
 
         except DuplicateKeyError as e:

@@ -130,11 +130,11 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
-    send_email(
-        RECIPIENTS_EMAIL,
-        'Logs das informacões analisadas'.encode(encoding='utf-8'),
-        "Log das análises recentemente concluídas".encode(encoding='utf-8'),
-        LOG_FILE)
+    # send_email(
+    #     RECIPIENTS_EMAIL,
+    #     'Logs das informacões analisadas'.encode(encoding='utf-8'),
+    #     "Log das análises recentemente concluídas".encode(encoding='utf-8'),
+    #     LOG_FILE)
     # logger_analysis.debug("Corretas Encontrados: %s",
     #                       json.dumps(correct_founded, indent=2))
 
@@ -233,11 +233,14 @@ def order_by_date(list_item):
 
 def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
     try:
-        value = 0
         cancel_purge = 'nao'
         basic_data = nota_pagamento['dados_basicos']
         data_details = nota_pagamento['dados_detalhados']
         documents_detail = data_details['detalhamento_do_documento']
+        value = basic_data['valor']
+        logger_analysis.debug(documents_detail)
+        logger_analysis.debug(basic_data)
+        logger_analysis.debug(nota_pagamento['geral_data'])
         if isinstance(documents_detail['empenho'], list):
             index_empenho = documents_detail['empenho'].index(doc_empenho_id)
             value = documents_detail['valor_rs'][index_empenho]
@@ -251,6 +254,7 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
 
         obs_document = normalize_text(data_details['observacao_do_documento'])
         founded_cancel_incorrect = match_cancel.findall(obs_document)
+        logger_analysis.debug(obs_document)
         if founded_cancel_incorrect:
             value = basic_data['valor']
             cancel_purge = 'sim'
