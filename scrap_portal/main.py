@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     fallback_job.modify(max_instances=1)
     finder_urls_notas_job.modify(max_instances=1)
-    roles_.modify(max_instances=1)
+    # roles_.modify(max_instances=1)
 
     try:
         while True:
