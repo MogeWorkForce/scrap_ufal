@@ -16,8 +16,15 @@ def fix_old_docs_to_new_pattern():
     i = 0
     for doc in docs_dao.documents.find({}):
         key = {"_id": doc['_id']}
-        new_doc = remove_list(doc)
-        docs_dao.documents.replace_one(key, new_doc, upsert=True)
+        # new_doc = remove_list(doc)
+        new_doc = doc
+        new_doc['_id'] = doc['geral_data']['num_doc']
+        # docs_dao.documents.replace_one(key, new_doc, upsert=True)
+        try:
+            docs_dao.documents.insert(new_doc)
+            docs_dao.documents.remove(key)
+        except Exception as e:
+            print e
         print '-' * 30, '\n', i, ' - ', key
         i += 1
 

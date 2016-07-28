@@ -51,7 +51,7 @@ class DocumentsDao(MongoClient):
             url_ += doc['geral_data']['session'] + "/"
             url_ += doc['geral_data']['type_doc']
             url_ += '?documento=' + doc['geral_data']['num_doc']
-            key = {"_id": url_}
+            key = {"_id": doc['geral_data']['num_doc']}
             doc = self.adapt_docs_relacionados(doc)
             doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
             self.documents.replace_one(key, doc, upsert=upsert)

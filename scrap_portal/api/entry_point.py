@@ -64,7 +64,7 @@ def insert_urls():
     return {"message": {"success": True}}
 
 
-@app.put(NAME_VERSION + "urls")
+@app.route(NAME_VERSION + "urls", method="OPTIONS")
 def options_urls():
     return {
         "Content-Type": "application/json",
