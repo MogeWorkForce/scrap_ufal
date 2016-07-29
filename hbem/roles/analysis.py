@@ -158,15 +158,20 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
     logger_analysis.debug('Start create document!')
-    generate_report(total, total_correct, total_error, error_payload_founded)
-    logger_analysis.debug("Finish create document!")
+
+    content_to_write = {
+        'total': total,
+        'total_correct':total_correct,
+        'total_error':total_error,
+        'payload': error_payload_founded
+    }
     logger_analysis.debug('Send email!')
     send_email(
         RECIPIENTS_EMAIL,
         'Relatório das informacões analisadas'.encode(encoding='utf-8'),
         "Relatório das análises recentemente concluídas".encode(encoding='utf-8'),
         LOG_FILE,
-        RELATORIO_FILE
+        content_to_write
     )
     logger_analysis.debug('Sended email!')
 
@@ -300,41 +305,6 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
 
 def get_only_numbers(word):
     return word.split('-')[0].strip()
-
-
-def generate_report(total, corrects, errors, payload_erros):
-
-    with open(RELATORIO_FILE, 'w') as relatorio_analysis:
-        relatorio_analysis.write("Relatorio de Conclusão de Análise".encode(
-            encoding='utf-8'))
-        relatorio_analysis.write("\n\n")
-        relatorio_analysis.write("Total Certas: %d\n" % corrects)
-        relatorio_analysis.write("Total com Erros: %d\n" % errors)
-        relatorio_analysis.write("Total Analisadas: %d\n" % total)
-
-        relatorio_analysis.write("\n\n")
-        relatorio_analysis.write(
-            "Detalhamento das Notas de Empenho com anomalias:\n\n")
-
-        i = 1
-        for key, value in payload_erros.iteritems():
-            urls_access = pattern_url_accesss % key
-
-            relatorio_analysis.write("%d - Url: %s\n" % (i, urls_access))
-            relatorio_analysis.write("\tDocumento: %s\n" % key)
-            relatorio_analysis.write("\tGestão: ".encode(encoding='utf-8'))
-            relatorio_analysis.write("%s\n" % value['gestao'])
-            relatorio_analysis.write("\tUnidade Gestora Emitente: %s\n" %
-                                        value['unidade_gestora_emitente'])
-            for error in value['error']:
-                error_name = error['error'].encode(encoding='utf-8')
-                relatorio_analysis.write('\t\t')
-                relatorio_analysis.write(error_name)
-                relatorio_analysis.write('\n')
-            relatorio_analysis.write('\n')
-            i += 1
-
-    return relatorio_analysis
 
 if __name__ == "__main__":
     analysis_bidding_mode()

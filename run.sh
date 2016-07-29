@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 gunicorn -w 2 -b 0.0.0.0:8080 hbem.api.entry_point:app &
-python -m hbem.roles
+python -m hbem.roles.analysis
 if [ "$MIGRATE_DOCUMENTS" = true ]; then
     echo "Starting adapt documents!"
     python -m hbem.utils.adapt_docs
