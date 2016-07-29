@@ -111,8 +111,10 @@ if __name__ == '__main__':
         old_fallback, trigger='cron', minute=3, hour=0)
 
     # Call Roles
-    # roles_ = scheduler.add_job(
-    #     analysis_bidding_mode, trigger='interval', minutes=30)
+    INTERVAL_CALL_ROLES = os.environ.get('INTERVAL_CALL_ROLES', 30)
+    roles_ = scheduler.add_job(
+        analysis_bidding_mode, trigger='interval',
+        minutes=int(INTERVAL_CALL_ROLES))
 
     scheduler.start()
 
