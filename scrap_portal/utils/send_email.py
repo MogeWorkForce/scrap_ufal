@@ -11,7 +11,7 @@ from email.mime.multipart import MIMEMultipart
 EMAIL = os.environ.get('EMAIL', 'exemogenes@gmail.com')
 
 
-def send_email(recipients, message, subject, file_name=None):
+def send_email(recipients, message, subject, file_name=None, file_to_body=None):
     if not isinstance(recipients, (list, tuple)):
         recipients = [recipients]
     emaillist = [elem.strip().split(',') for elem in recipients]
@@ -22,9 +22,15 @@ def send_email(recipients, message, subject, file_name=None):
 
     msg.preamble = message
 
-    if file_name:
-        part = MIMEText("Arquivo anexado aqui.")
+    part = MIMEText("teste aqui.")
+
+    if file_to_body:
+        with open(file_to_body, "rb") as file_opened:
+            part = MIMEText(file_opened.read())
+
         msg.attach(part)
+
+    if file_name:
         with open(file_name, "rb") as file_opened:
             part = MIMEApplication(file_opened.read())
         file_name_sended = file_name.split('/')[-1]

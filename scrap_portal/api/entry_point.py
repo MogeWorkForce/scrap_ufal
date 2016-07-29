@@ -36,10 +36,8 @@ else:
     docs_dao = DocumentsDao(host='172.17.0.1')
     proxy_dao = ProxiesDao(host='172.17.0.1')
 
-NAME_VERSION = "/%s/%s/" % (APP_NAME, VERSION)
 
-
-@app.put(NAME_VERSION + "urls")
+@app.put("urls")
 def insert_urls():
     body_error = {"message": {"errors": [], "success": False}}
     if request.headers.get('Content-Type') != "application/json":
@@ -64,7 +62,7 @@ def insert_urls():
     return {"message": {"success": True}}
 
 
-@app.route(NAME_VERSION + "urls", method="OPTIONS")
+@app.route("urls", method="OPTIONS")
 def options_urls():
     return {
         "Content-Type": "application/json",
@@ -72,7 +70,7 @@ def options_urls():
     }
 
 
-@app.get(NAME_VERSION + "status/urls/<collection>")
+@app.get("status/urls/<collection>")
 def status_enqueue(collection):
     key = {"_id": int(date.today().strftime("%Y%m%d"))}
 
@@ -87,26 +85,26 @@ def status_enqueue(collection):
     }
 
 
-@app.get(NAME_VERSION + "status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
+@app.get("status/documents/<start:re:\d{8}>/<end:re:\d{8}>/")
 def count_documents_last_days(start, end):
     return "%s - %s\n" % (start, end)
 
 
-@app.route(NAME_VERSION + 'errors_code/', method="OPTIONS")
+@app.route('errors_code/', method="OPTIONS")
 def get_list_errors():
     return VERBOSE_ERROR_TYPE
 
 
-@app.get(NAME_VERSION + 'analyze_document/<doc_id:re:\d{4}\w{2}\d{6}>/')
+@app.get('analyze_document/<doc_id:re:\d{15}\w{2}\d{6}>/')
 def recover_analyzed_document(doc_id):
-    host = request["HTTP_HOST"]+NAME_VERSION + "urls"
+    host = request["HTTP_HOST"] + "urls"
     doc_found = docs_dao.documents.find_one({"_id": doc_id, "analysed": True})
     if not doc_found:
         return {
             "message": "Infelizmente ainda não indexamos esta Nota de Empenho"
-            " ou com as atuais regras em vigor, não seja possível analisá-la."
-            " Porém, ajude-nos a fiscalizar, envie um POST para: %s com a Url deste "
-            "documento. E nós faremos o resto!" % host,
+                       " ou com as atuais regras em vigor, não seja possível analisá-la."
+                       " Porém, ajude-nos a fiscalizar, envie um POST para: %s com a Url deste "
+                       "documento. E nós faremos o resto!" % host,
             "use_this_url": host,
             "success": False
         }

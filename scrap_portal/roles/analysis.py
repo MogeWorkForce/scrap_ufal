@@ -28,13 +28,15 @@ formatter = logging.Formatter(
 )
 
 LOG_FILE = BASE_DIR+'/analysis.log'
+RELATORIO_FILE = BASE_DIR+'/relatorio.txt'
 handler = logging.FileHandler(LOG_FILE, mode='w')
 handler.setFormatter(formatter)
 logger_analysis.addHandler(handler)
 
 from ..data_model.dao.mongodb import DocumentsDao
 
-RECIPIENTS_EMAIL = os.environ.get('RECIPIENTS_EMAIL', '["exemogenes@gmail.com"]')
+#RECIPIENTS_EMAIL = os.environ.get('RECIPIENTS_EMAIL', '["exemogenes@gmail.com"]')
+RECIPIENTS_EMAIL = '["exemogenes@gmail.com", "exemogenes@hotmail.com"]'
 RECIPIENTS_EMAIL = json.loads(RECIPIENTS_EMAIL)
 
 MODE = os.environ.get('MODE')
@@ -44,14 +46,17 @@ else:
     docs_dao = DocumentsDao(host='172.17.0.1')
 
 pattern_url = "http://portaltransparencia.gov.br/despesasdiarias/pagamento?documento=%s%s%s"
+pattern_url_accesss = "http://portaltransparencia.gov.br/despesasdiarias/empenho?documento=%s"
 
 
 def analysis_bidding_mode():
     error_founded = defaultdict(dict)
+    error_payload_founded = defaultdict(dict)
     correct_founded = defaultdict(dict)
     total_correct = 0
     total = 0
     total_error = 0
+
     for role in docs_dao.roles.find():
 
         type_bidding = role['_id']
@@ -115,7 +120,9 @@ def analysis_bidding_mode():
 
             if error_this_doc:
                 error_founded[doc['_id']] = error_this_doc
+
                 total_error += 1
+
             else:
                 correct_founded[doc['_id']] = doc['geral_data']['url']
                 total_correct += 1
@@ -130,11 +137,15 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
+    generate_report(total, total_correct, total_error, error_founded)
+
     send_email(
         RECIPIENTS_EMAIL,
         'Logs das informacões analisadas'.encode(encoding='utf-8'),
         "Log das análises recentemente concluídas".encode(encoding='utf-8'),
-        LOG_FILE)
+        LOG_FILE,
+        RELATORIO_FILE
+    )
 
 
 def check_exceded_amount(doc):
@@ -267,6 +278,34 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
 def get_only_numbers(word):
     return word.split('-')[0].strip()
 
+
+def generate_report(total, corrects, errors, payload_erros):
+
+    with open(RELATORIO_FILE, 'w') as relatorio_analysis:
+        relatorio_analysis.write("Relatorio de Conclusão de Análise".encode(
+            encoding='utf-8'))
+        relatorio_analysis.write("\n")
+        relatorio_analysis.write("Total Certas: %d\n" % corrects)
+        relatorio_analysis.write("Total com Erros: %d\n" % errors)
+        relatorio_analysis.write("Total Analisadas: %d\n" % total)
+
+        relatorio_analysis.write("\n\n")
+        relatorio_analysis.write(
+            "Detalhamento das Notas de Empenho com anomalias:\n\n")
+
+        i = 1
+        for key, value in payload_erros.iteritems():
+            urls_access = pattern_url_accesss % key
+            relatorio_analysis.write("%d - Url: %s\n" % (i, urls_access))
+            for error in value:
+                error_name = error['error'].encode(encoding='utf-8')
+                relatorio_analysis.write('\t')
+                relatorio_analysis.write(error_name)
+                relatorio_analysis.write('\n')
+            relatorio_analysis.write('\n')
+            i += 1
+
+    return relatorio_analysis
 
 if __name__ == "__main__":
     analysis_bidding_mode()
