@@ -40,6 +40,7 @@ RECIPIENTS_EMAIL = '["exemogenes@gmail.com", "exemogenes@hotmail.com"]'
 RECIPIENTS_EMAIL = json.loads(RECIPIENTS_EMAIL)
 
 MODE = os.environ.get('MODE')
+SELECTED_NOTAS = os.environ.get('SELECTED_NOTAS', False)
 if MODE == 'PROD':
     docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
@@ -78,7 +79,7 @@ def analysis_bidding_mode():
             type_bidding)
         correct_bidding = normalize_text(type_bidding)
         for doc in docs_dao.documents.find(json.loads(role['query'])):
-            if doc['geral_data']['url'] not in urls:
+            if SELECTED_NOTAS and doc['geral_data']['url'] not in urls:
                 continue
             time_start_analysis = datetime.now()
             logger_analysis.debug(doc['_id'])
@@ -323,7 +324,7 @@ def generate_report(total, corrects, errors, payload_erros):
             relatorio_analysis.write("\tUnidade Gestora Emitente: %s\n" %
                                         value['unidade_gestora_emitente'])
             for error in value['error']:
-                error_name = error['error']
+                error_name = error['error'].encode(encoding='utf-8')
                 relatorio_analysis.write('\t\t')
                 relatorio_analysis.write(error_name)
                 relatorio_analysis.write('\n')
