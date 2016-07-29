@@ -130,46 +130,44 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
-    # send_email(
-    #     RECIPIENTS_EMAIL,
-    #     'Logs das informacões analisadas'.encode(encoding='utf-8'),
-    #     "Log das análises recentemente concluídas".encode(encoding='utf-8'),
-    #     LOG_FILE)
-    # logger_analysis.debug("Corretas Encontrados: %s",
-    #                       json.dumps(correct_founded, indent=2))
+    send_email(
+        RECIPIENTS_EMAIL,
+        'Logs das informacões analisadas'.encode(encoding='utf-8'),
+        "Log das análises recentemente concluídas".encode(encoding='utf-8'),
+        LOG_FILE)
 
 
 def check_exceded_amount(doc):
-    doc_id = doc['_id']
     basic_data = doc['dados_basicos']
     doc_ordered = order_by_date(doc['documentos_relacionados'])
 
     logger_analysis.debug('doc: %s', doc['_id'])
-    limit_value = doc['dados_basicos']['valor']
+    limit_value = basic_data['valor']
     notas_pagamento = 0
+    unidade_gestora_emitente = get_only_numbers(
+        basic_data['unidade_gestora_emitente'])
+    gestao = get_only_numbers(basic_data['gestao'])
     for item in doc_ordered:
         type_bidding_relational_docs = normalize_text(item['fase'])
         type_species_of_bidding = normalize_text(item['especie'])
         if type_bidding_relational_docs == 'pagamento':
-            # logger_analysis.debug('--- %s', item['documento'])
 
             logger_analysis.debug(
                 "Check se já está indexado ou colocar a url na QUEUE, para "
                 "ser recuperado e processado o conteúdo: %s",
                 item['documento'])
             payment_in_analyses = docs_dao.documents.find_one({
-                "_id": item['documento']
+                "_id": unidade_gestora_emitente+gestao+item['documento']
             })
             if payment_in_analyses:
                 notas_pagamento += retrieve_payment_by_empenho(
-                    payment_in_analyses, doc_id)
+                    payment_in_analyses, basic_data['documento'])
             else:
                 logger_analysis.debug(
                     "Coloque essa url na QUEUE para ser para ter seus dados"
                     " coletados no futuro.")
 
                 value = item['valor_rs']
-                # logger_analysis.debug(item['especie'])
                 if 'OBS ' in item['especie']:
                     logger_analysis.debug(
                         'Encontrado "OBS" (Tipo de Ordem Bancaria) dentro '
@@ -177,12 +175,10 @@ def check_exceded_amount(doc):
                     value *= -1
 
                 notas_pagamento += item['valor_rs']
-                unidade_gestora_emitente = get_only_numbers(
-                    basic_data['unidade_gestora_emitente'])
-                gestao = get_only_numbers(basic_data['gestao'])
+
                 url = pattern_url % (
                     unidade_gestora_emitente, gestao, item['documento'])
-                logger_analysis.debug('url: "%s"', url)
+                logger_analysis.warning('url: "%s"', url)
                 docs_dao.url.dynamic_url('queue', url)
 
         elif type_bidding_relational_docs == 'empenho':
@@ -238,9 +234,6 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
         data_details = nota_pagamento['dados_detalhados']
         documents_detail = data_details['detalhamento_do_documento']
         value = basic_data['valor']
-        logger_analysis.debug(documents_detail)
-        logger_analysis.debug(basic_data)
-        logger_analysis.debug(nota_pagamento['geral_data'])
         if isinstance(documents_detail['empenho'], list):
             index_empenho = documents_detail['empenho'].index(doc_empenho_id)
             value = documents_detail['valor_rs'][index_empenho]
@@ -267,7 +260,7 @@ def retrieve_payment_by_empenho(nota_pagamento, doc_empenho_id):
             nota_pagamento['_id'], value, doc_empenho_id)
         return value
     except ValueError:
-        traceback.print_exc()
+        logger_analysis.exception('something are wrong')
         return 0
 
 
