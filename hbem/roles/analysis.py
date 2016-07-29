@@ -157,8 +157,10 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
+    logger_analysis.debug('Start create document!')
     generate_report(total, total_correct, total_error, error_payload_founded)
-
+    logger_analysis.debug("Finish create document!")
+    logger_analysis.debug('Send email!')
     send_email(
         RECIPIENTS_EMAIL,
         'Relatório das informacões analisadas'.encode(encoding='utf-8'),
@@ -166,6 +168,7 @@ def analysis_bidding_mode():
         LOG_FILE,
         RELATORIO_FILE
     )
+    logger_analysis.debug('Sended email!')
 
 
 def check_exceded_amount(doc):
