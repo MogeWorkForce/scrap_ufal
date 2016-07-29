@@ -155,7 +155,7 @@ def home():
             "in_use": proxies_in_use,
             "available": proxies_available
         },
-        "time_ms": "%.6f" % (time.time() - start)
+        "time_ms": "%.6f" % (time.time() - start) * 1000
     }
     return result
 
