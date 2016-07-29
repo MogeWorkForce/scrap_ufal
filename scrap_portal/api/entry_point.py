@@ -141,6 +141,7 @@ def home():
 
     proxies_in_use = proxy_dao.proxies.find({"in_use": True}).count()
     proxies_available = proxy_dao.proxies.find({"in_use": False}).count()
+    time_elapse = (time.time() - start) * 1000
 
     result = {
         "urls": {
@@ -155,7 +156,7 @@ def home():
             "in_use": proxies_in_use,
             "available": proxies_available
         },
-        "time_ms": "%.6f" % (time.time() - start) * 1000
+        "time_ms": "%.6f" % time_elapse
     }
     return result
 
