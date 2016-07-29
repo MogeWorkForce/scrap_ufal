@@ -120,7 +120,12 @@ def analysis_bidding_mode():
 
             if error_this_doc:
                 error_founded[doc['_id']] = error_this_doc
-
+                und_gestora = doc['dados_basicos']['unidade_gestora_emitente']
+                error_payload_founded[doc['_id']] = {
+                    'error': error_this_doc,
+                    'gestao': doc['dados_basicos']['gestao'],
+                    'unidade_gestora_emitente': und_gestora
+                }
                 total_error += 1
 
             else:
@@ -137,12 +142,12 @@ def analysis_bidding_mode():
     logger_analysis.debug("Total Certas: %s", total_correct)
     logger_analysis.debug("Total com Erros: %s", total_error)
     logger_analysis.debug("Total Analisadas: %s", total)
-    generate_report(total, total_correct, total_error, error_founded)
+    generate_report(total, total_correct, total_error, error_payload_founded)
 
     send_email(
         RECIPIENTS_EMAIL,
-        'Logs das informacões analisadas'.encode(encoding='utf-8'),
-        "Log das análises recentemente concluídas".encode(encoding='utf-8'),
+        'Relatório das informacões analisadas'.encode(encoding='utf-8'),
+        "Relatório das análises recentemente concluídas".encode(encoding='utf-8'),
         LOG_FILE,
         RELATORIO_FILE
     )
@@ -284,7 +289,7 @@ def generate_report(total, corrects, errors, payload_erros):
     with open(RELATORIO_FILE, 'w') as relatorio_analysis:
         relatorio_analysis.write("Relatorio de Conclusão de Análise".encode(
             encoding='utf-8'))
-        relatorio_analysis.write("\n")
+        relatorio_analysis.write("\n\n")
         relatorio_analysis.write("Total Certas: %d\n" % corrects)
         relatorio_analysis.write("Total com Erros: %d\n" % errors)
         relatorio_analysis.write("Total Analisadas: %d\n" % total)
@@ -296,10 +301,16 @@ def generate_report(total, corrects, errors, payload_erros):
         i = 1
         for key, value in payload_erros.iteritems():
             urls_access = pattern_url_accesss % key
+
             relatorio_analysis.write("%d - Url: %s\n" % (i, urls_access))
-            for error in value:
-                error_name = error['error'].encode(encoding='utf-8')
-                relatorio_analysis.write('\t')
+            relatorio_analysis.write("\tDocumento: %s\n" % key)
+            relatorio_analysis.write("\tGestão: ".encode(encoding='utf-8'))
+            relatorio_analysis.write("%s\n" % value['gestao'])
+            relatorio_analysis.write("\tUnidade Gestora Emitente: %s\n" %
+                                        value['unidade_gestora_emitente'])
+            for error in value['error']:
+                error_name = error['error']
+                relatorio_analysis.write('\t\t')
                 relatorio_analysis.write(error_name)
                 relatorio_analysis.write('\n')
             relatorio_analysis.write('\n')
