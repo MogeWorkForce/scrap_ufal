@@ -15,7 +15,7 @@ from ..utils.analysis_codes import VERBOSE_ERROR_TYPE
 from ..utils.analysis_codes import WRONG_BIDDING, EXCEDED_LIMIT_OF_PAYMENTS
 from ..utils.send_email import send_email
 
-match_cancel = re.compile(r'(?P<cancel_incorreto>cancelamento|incorreto|nao_corresponde|erro)')
+match_cancel = re.compile(r'(?P<cancel_incorreto>cancelamento|incorreto|nao_corresponde|erro|devolucao|indevido)')
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 
