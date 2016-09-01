@@ -125,10 +125,12 @@ def load_content(content_original, paginator=False, data=None,
     if not visited_links:
         visited_links = []
 
+    if not data:
+        data = {}
+
     table_content = match.findall(content_original)
     subtables = match_subtable.findall(content_original)
     content_subtable = []
-
     docs_relacionados = []
     for subtable in subtables:
         content_ = {}
@@ -270,7 +272,6 @@ def load_content(content_original, paginator=False, data=None,
         save_or_update(data)
 
     client.url.set_chunk_url(docs_relacionados)
-
     return data
 
 

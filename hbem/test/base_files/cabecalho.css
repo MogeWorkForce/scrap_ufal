@@ -1,0 +1,371 @@
+
+#titulo
+{
+    width: 100%;
+    /* Isso evita que apareçam barras de rolagem quando o foco está no link
+        do título (bug do firefox que faz o outline ocupar espaço quando
+        não deveria) */
+    overflow: visible;
+}
+
+#titulo h1
+{
+    margin: 0;
+    padding: 0;
+}
+
+#titulo img
+{
+    float: left;
+}
+
+#menu-acessivel
+{
+	display: none;
+}
+
+#navegacao
+{
+	/* Fonte */
+	font-family: Verdana;
+	font-size: 70%;
+	color: rgb(0,102,51);
+
+	/* Posicionamento */
+	position: absolute;
+    left: 515px;
+	top: 92px;
+
+	/* Tamanho */
+	width: 460px;
+	height: 39px;
+}
+
+#navegacao a
+{
+	/* Cor */
+	color: rgb(0,102,51);
+
+    text-decoration: none;
+}
+
+#navegacao a:hover
+{
+    text-decoration: underline;
+}
+
+#navegacao li
+{
+	/* Posicionamento */
+	display: inline;
+}
+
+#acesso-rapido
+{
+	float: left;
+    /* width: 333px; */
+	width: 34%;
+
+    font-family: Verdana;
+	font-size: 70%;
+	color: rgb(0,102,51);
+
+    margin-bottom: 15px;
+    margin-right: 20px;
+
+}
+
+#acesso-rapido .conteudo *
+{
+    float: left;
+}
+
+#acesso-rapido h2
+{
+    margin: 0 1% 0 2%;
+    _margin: 0 0.5% 0 1%; /* HACK IE6*/
+
+    font-size: 100%;
+    font-weight: normal;
+}
+
+#acesso-rapido select
+{
+	font-family: Arial;
+    font-size: 90%;
+}
+
+#acesso-rapido .conteudo
+{
+   float: left;
+	width: 314px;
+	height: 37px;
+	padding-top: 10px;
+    background-image: url('/despesasdiarias/_imagem/acessorapido_fundo.png');
+	background-repeat: repeat-x;
+}
+
+#acesso-rapido .borda
+{
+    float: left;
+    width: 19px;
+    height: 37px;
+
+    background-image: url('/despesasdiarias/_imagem/acessorapido_borda.png');
+    background-repeat: no-repeat;
+}
+
+#acesso-rapido a
+{
+    display: block;
+
+    color: black;
+    text-decoration: none;
+
+    border: 1px solid #066803;
+    background-color: #a8c8a3;
+
+    padding: 0.1em 0.3em;
+    margin-left: 1.6%;
+    _margin-left: 0.8%; /* HACK IE6*/
+}
+
+#linksAcessoRapido optgroup
+{
+	font-weight: bold;
+	font-style: normal;
+}
+
+#barra-brasil { 
+    position:relative;
+    overflow:hidden;
+    min-width:1000px;
+    background: #000000 url(/despesasdiarias/_imagem/barra-brasil-v3-bgx.png) center bottom no-repeat;
+}
+
+#barra-brasil .barra {
+    display: block;
+    position: relative;
+    width: 960px;
+    height:28px;
+    margin: 0 auto;
+    background: url(/despesasdiarias/_imagem/barra-brasil-v3-bgx.gif) 0 bottom repeat-x;
+}
+
+#barra-brasil .barra ul {
+    float:right;
+    width: 319px;
+}
+
+#barra-brasil .barra ul li {
+    float: left;
+    padding-left: 25px;
+}
+
+#barra-brasil .ai {
+    display: block;
+    width: 161px;
+    height: 28px;
+    text-indent: -1000px;
+    color: #000000;
+    background: #000000 url(/despesasdiarias/_imagem/ai.png) no-repeat 0 4px;
+}
+
+#barra-brasil .brasilgov {
+    display: block;
+    width: 108px;
+    height: 28px;
+    text-indent: -1000px;
+    color: #000000;
+    background: #000000 url(/despesasdiarias/_imagem/brasil.png) no-repeat 0 4px;
+}
+
+
+
+
+
+
+
+.barra-acessivel ul li {
+	display:inline;
+	
+}
+.menuApoio ul li  {
+	display:inline;
+}
+
+.portalheader {
+	height:173px;
+	background: url("/despesasdiarias/_imagem/bg-header.png");
+	background-repeat:repeat-x;
+}
+
+.header_content {
+    width:980px;
+    margin: 0 auto;
+}
+
+
+h1.marca  {
+
+	background: url("/images/marca.png") left no-repeat;
+	text-indent:-9999px;
+	height:77px;
+	margin-top:15px;	
+
+}
+
+.menuapoio ul li a {
+	font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    line-height: 14px;
+	
+	text-decoration:none;
+	font-weight:500;
+	display: inline-block;
+	/* visual do link */
+	color: #666;
+	text-decoration: none;
+	border-bottom: 1px solid #fff;
+	text-shadow: 0 0 1px rgba(51,51,51,0.3);
+	-webkit-transition: 0.5s ease-in;
+	-moz-transition: 0.5s ease-in;
+	-o-transition: 0.5s ease-in;
+	transition: 0.5s ease-in;
+	}
+.menuapoio a:hover {
+	text-decoration:underline;
+	
+	
+	
+}
+	
+	
+.barra-acessivel {
+	
+	height:25px;
+}
+.acessTeclado ul li {
+	position:relative;
+	float:left;
+	padding-right:10px;
+	
+	
+}
+
+.numeroAtalho {
+	color:#0a5718;
+	float:left;
+	background-color:#a0d8ab;
+	padding:0 3px;
+	margin-left:5px;
+	height:14px;
+    margin-top:5px;
+}
+
+.acessTexto {
+    margin-top:5px;
+	float:left;
+}
+.acessTeclado {
+	position:relative;
+	float:left;
+	font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    line-height: 14px;
+	color:#dcffe3;
+	font-weight:300;
+	height:25px;
+	
+	
+}
+
+.acessibilidade {
+	position:relative;
+	float:right;
+	}
+.menuApoio {
+	float:right;
+	height: 29px;
+	margin-top:22px;
+	
+}
+.menuApoio a {
+	font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 14px;
+	color:#fff;
+	text-decoration:none;
+	font-weight:300;
+}
+
+.menuApoio a:hover {
+	font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 14px;
+	color:#fff;
+	text-decoration:underline;
+	
+	font-weight:300;
+}
+.menuApoio ul li {
+	padding:0 15px;
+	border-right: 1px solid #a0d8ab;
+	position:relative;
+	float:right;
+}
+
+.menuApoio ul li.last {
+	padding:0 5px;
+	border-right: none;
+}
+
+
+.menuApoio {
+	background-color: #01430b:
+}
+
+.acessibilidade a {
+	font-family: 'Open Sans', Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    line-height: 14px;
+	color:#dcffe3;
+	text-decoration:none;
+	font-weight:300;
+}
+.acessibilidade a:hover {
+	text-decoration:underline;
+	
+}
+
+.acessibilidade ul li {
+	padding:0 10px;	
+	position:relative;
+	float:right;
+	text-transform:uppercase;
+
+}
+.acessibilidade {
+
+height:25px;
+}
+
+.acessoAInformacao {
+	padding-top: 20px;
+	float: left;
+}
+
+.assinatura {
+    padding-top:20px;
+	text-align:right;
+}
+
+.rodape {	
+	background-color: #00420c;
+	margin-top: -100px;
+	height: 100px;
+	position: absolute;
+	width: 100%;
+	clear: both;
+	min-width: 1004px;
+}
