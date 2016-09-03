@@ -2,7 +2,10 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
+import re
 from unicodedata import normalize
+
+match_span = re.compile(r'<span class="aviso_lista">.*?</span>?')
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
@@ -19,8 +22,10 @@ NOT_ALLOWED_CLEAN = ('documentos_relacionados',)
 
 
 def clean_result(result):
-    return result.text.replace('\n', '').replace(
+    txt = result.text.replace('\n', '').replace(
         '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
+    txt = match_span.sub('', txt)
+    return txt
 
 
 def normalize_text(txt, codif='utf-8'):

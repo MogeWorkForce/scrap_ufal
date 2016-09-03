@@ -288,6 +288,9 @@ def get_paginator_content(content_original, data, visited_links):
 
             if next_pg == 1:
                 link_ = url_
+                link_page1_with_end_link = url_ + end_link_paginator % next_pg
+                if link_page1_with_end_link in visited_links:
+                    continue
             else:
                 link_ = url_ + end_link_paginator % next_pg
 
