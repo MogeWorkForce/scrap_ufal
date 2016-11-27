@@ -1,5 +1,5 @@
 # scrap_ufal
-## Documentação em construção
+## Documentação em construção (Já apresentado o TCC =D )
 Para conseguir rodar o script, efetuar o seguinte comando, com python (2.7.X) instalado na sua máquina:
 
 0 - Instalar o pip na sua máquina:
