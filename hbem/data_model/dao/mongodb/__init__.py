@@ -46,14 +46,13 @@ class DocumentsDao(MongoClient):
 
     def insert_document(self, doc, upsert=False):
         try:
-            date_ = date.today()
-            url_ = doc['geral_data']['url_base'] + '/'
-            url_ += doc['geral_data']['session'] + "/"
-            url_ += doc['geral_data']['type_doc']
-            url_ += '?documento=' + doc['geral_data']['num_doc']
+            url_ = "{}/{}/{}/{}?ordenarPor=fase&direcao=desc".format(
+                doc["geral_data"]["url_base"],
+                doc["geral_data"]["session"],
+                doc["geral_data"]['type_doc'].lower(),
+                doc["geral_data"]['num_doc'])
             key = {"_id": doc['geral_data']['num_doc']}
-            doc = self.adapt_docs_relacionados(doc)
-            doc['date_saved'] = int(date_.strftime(self.PATTERN_PK))
+            doc['saved_at'] = datetime.utcnow()
             self.documents.replace_one(key, doc, upsert=upsert)
             logger_dao.debug(('save:', key))
             self.url.dynamic_url('queue', url_)
@@ -62,34 +61,14 @@ class DocumentsDao(MongoClient):
             logger_dao.error(e)
             logger_dao.debug("move on - DuplicateKey")
 
-    def adapt_docs_relacionados(self, doc):
-        tmp_docs = doc["documentos_relacionados"]
-        doc["documentos_relacionados"] = [
-            {
-                "data": tmp_docs["data"][i],
-                "unidade_gestora": tmp_docs["unidade_gestora"][i],
-                "orgao_superior": tmp_docs["orgao_superior"][i],
-                "orgao_entidade_vinculada":
-                    tmp_docs["orgao_entidade_vinculada"][i],
-                "favorecido": tmp_docs["favorecido"][i],
-                "fase": tmp_docs["fase"][i],
-                "especie": tmp_docs["especie"][i],
-                "elemento_de_despesa": tmp_docs["elemento_de_despesa"][i],
-                "documento": tmp_docs["documento"][i],
-                "valor_rs": float(tmp_docs["valor_rs"][i]) if
-                tmp_docs["valor_rs"][i] else 0.00,
-            } for i in xrange(len(tmp_docs["fase"]))
-            ]
-        doc = remove_list(doc)
-        return doc
-
     def inform_analysed_docs(self, doc_id, error_list, time_start_analysis):
 
         fields = {
             "analysed": True,
             "time_analyze_ms": (
-                datetime.now() - time_start_analysis).total_seconds()*1000.0,
-            "errors": error_list
+                datetime.utcnow() - time_start_analysis).total_seconds()*1000.0,
+            "errors": error_list,
+            "saved_at": datetime.utcnow()
         }
         logger.debug(fields)
         self.documents.update_one(
@@ -246,7 +225,7 @@ class ProxiesDao(MongoClient):
         self.error_proxies = self.db_proxy.error_proxies
 
     def insert_proxies(self, list_proxy):
-        now = datetime.now()
+        now = datetime.utcnow()
         if not isinstance(list_proxy, (list, tuple)):
             list_proxy = [list_proxy]
 
@@ -255,18 +234,18 @@ class ProxiesDao(MongoClient):
                 'in_use': False,
                 'proxy': x['proxy'],
                 'localization': x['localization'],
-                "last_date_in_use": int(now.strftime("%Y%m%d%H%M%S"))
+                "last_date_in_use": now
             } for x in list_proxy
             ]
         self.proxies.insert_many(list_proxy)
 
     def get_unused_proxy(self):
-        random_skip = random.randint(0, 120)
-        now = datetime.now() - timedelta(minutes=10, seconds=30)
+        random_skip = random.randint(0, 20)
+        now = datetime.utcnow() - timedelta(minutes=10, seconds=30)
         list_proxy = self.proxies.find({
             'in_use': False,
             "last_date_in_use": {
-                "$lte": int(now.strftime("%Y%m%d%H%M%S"))
+                "$lte": now
             }
         }).skip(random_skip).limit(1)
         if not list_proxy:
@@ -280,12 +259,11 @@ class ProxiesDao(MongoClient):
         return proxy
 
     def mark_unused_proxy(self, key, error=False):
-        now = datetime.now()
+        now = datetime.utcnow()
         self.proxies.update_one({"_id": key},
                                 {"$set": {
                                     "in_use": False,
-                                    "last_date_in_use": int(
-                                        now.strftime("%Y%m%d%H%M%S"))
+                                    "last_date_in_use": now
                                 }})
         logger_dao.debug('release key(%s)', key)
         if error:
@@ -293,12 +271,11 @@ class ProxiesDao(MongoClient):
             self.error_proxies.insert_one({'payload': proxy_error})
 
     def release_all_proxies(self):
-        now = datetime.now()
+        now = datetime.utcnow()
         self.proxies.update_many({"in_use": True},
                                  {"$set": {
                                      "in_use": False,
-                                     "last_date_in_use": int(
-                                         now.strftime("%Y%m%d%H%M%S"))
+                                     "last_date_in_use": now
                                  }})
         logger_dao.debug('Release key all proxies')
 

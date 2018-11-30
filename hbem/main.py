@@ -25,12 +25,13 @@ if MODE == 'PROD':
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
     system_configs = SystemConfigDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    proxy_dao = ProxiesDao(host='172.17.0.1')
-    system_configs = SystemConfigDao(host='172.17.0.1')
+    proxy_dao = ProxiesDao()
+    system_configs = SystemConfigDao()
 
 
 def manager_queue_job(function, status=True):
     pass
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Set a Url to crawler")
@@ -125,16 +126,18 @@ if __name__ == '__main__':
     try:
         while True:
             time.sleep(60)
-            config = system_configs.get_configs()
-            system_up = config['system_up']
+            # config = system_configs.get_configs()
+            # if not config:
+            #     continue
+            # system_up = config['system_up']
 
-            queue_active = config['queue']
-            fallback_active = config['fallback']
-            finder_urls_notas_active = config['url_on_finder_urls_notas']
-            if not system_up:
-                logScheduller.warn(
-                    "The Jobs will be shutdown in few moments")
-                sys.exit(0)
+            # queue_active = config['queue']
+            # fallback_active = config['fallback']
+            # finder_urls_notas_active = config['url_on_finder_urls_notas']
+            # if not system_up:
+            #     logScheduller.warn(
+            #         "The Jobs will be shutdown in few moments")
+            #     sys.exit(0)
 
     except (KeyboardInterrupt, SystemExit):
         proxy_dao.release_all_proxies()

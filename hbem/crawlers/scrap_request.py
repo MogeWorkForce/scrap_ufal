@@ -10,17 +10,17 @@ import traceback
 from datetime import date
 
 import requests
+from bs4 import BeautifulSoup
 
 from ..data_model.dao.mongodb import DocumentsDao, ProxiesDao
-from ..utils import clean_result, normalize_text
+from ..utils import clean_result, normalize_text, REMOVE_SPACES_REGEX
 
 logger = logging.getLogger("HBEM.scraper")
 level_debug = logging.DEBUG
 logger.setLevel(level_debug)
 
-base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)'
-                       r'/(?P<type_doc>[^?]*)?.*?=(?P<num_doc>[a-zA-Z0-9]*)'
-                       r'&?(?:pagina=(?P<num_page>\d{1,3})#.*)?')
+base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)/'
+                    r'(?P<type_doc>[^?]*)?.*?/(?P<num_doc>[a-zA-Z0-9]*)')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(
@@ -36,24 +36,26 @@ match_tr = re.compile(
 )
 
 MODE = os.environ.get('MODE', 'DEV')
+URL_RELATED_DOCUMENTS = "/despesas/documento/documentos-relacionados/resultado"
+URL_EXPENSES_DETAIL = "/despesas/documento/empenho/detalhamento/resultado"
 
 if MODE == 'PROD':
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    client = DocumentsDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
+    client = DocumentsDao()
+    proxy_dao = ProxiesDao()
 
 start_ = time.time()
 
 
 def get_any_proxy():
-    prx = proxy_dao.get_unused_proxy()
-    key_ = prx['proxy'].split('//')[0]
+    proxy = proxy_dao.get_unused_proxy()
+    key_ = proxy['proxy'].split('//')[0]
     proxies = {
-        key_: prx
+        key_: proxy
     }
-    return prx['_id'], proxies
+    return proxy['_id'], proxies
 
 
 def save_or_update(doc):
@@ -62,7 +64,7 @@ def save_or_update(doc):
 
 def try_numeric(value):
     try:
-        tmp_value = value.replace("R$", "")
+        tmp_value = value.replace("R$", "").replace(".", "").replace(",", ".")
         value = float(tmp_value)
     except ValueError:
         pass
@@ -106,9 +108,9 @@ def get_content_page(url, visited_links=None, data=None):
     data = get_general_data(url, data)
     paginator = False
 
-    _id, prx = get_any_proxy()
+    _id, proxy = get_any_proxy()
     try:
-        result = cleaned_content(url, visited_links, prx)
+        result = cleaned_content(url, visited_links, proxy)
 
         no_spaces = result
         data = load_content(no_spaces, paginator, data, visited_links)
@@ -120,6 +122,59 @@ def get_content_page(url, visited_links=None, data=None):
     return data
 
 
+def get_related_documents(data):
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "100",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "fase",
+        "colunasSelecionadas": "data,fase,documentoResumido,especie",
+        "fase": data["geral_data"]["type_doc"].capitalize(),
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543455305806"
+    }
+
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_RELATED_DOCUMENTS
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        raise
+
+    return response.json()["data"]
+
+
+def get_expenses_detail(data):
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "100",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "valorUnitario",
+        "colunasSelecionadas": "subitem,quantidade,valorUnitario,valorTotal,descricao",
+        "fase": data["geral_data"]["type_doc"].capitalize(),
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543460544120"
+    }
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_EXPENSES_DETAIL
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        raise
+
+    return response.json()["data"]
+
+
 def load_content(content_original, paginator=False, data=None,
                  visited_links=None):
     if not visited_links:
@@ -128,185 +183,53 @@ def load_content(content_original, paginator=False, data=None,
     if not data:
         data = {}
 
-    table_content = match.findall(content_original)
-    subtables = match_subtable.findall(content_original)
-    content_subtable = []
-    docs_relacionados = []
-    for subtable in subtables:
-        content_ = {}
-        subtable_headers = []
-        j = 0
-        for content in match_tr.finditer(subtable):
-            line_ = content.group('content_tr').strip()
-            class_tr_sub = content.group('class_tr')
-            for z, item in enumerate(match_content.finditer(line_)):
-                content_value = item.group('content').strip()
-                if class_tr_sub in ('cabecalho',):
-                    content_value = normalize_text(content_value).replace(
-                        '_/_', '_')
-                    subtable_headers.append(content_value)
-                    content_[subtable_headers[-1]] = {}
-                    continue
-                else:
-                    content_value = try_numeric(content_value)
-                    if not content_[subtable_headers[z]]:
-                        content_[subtable_headers[z]] = [content_value]
-                    else:
-                        content_[subtable_headers[z]].append(content_value)
-            j += 1
-        content_subtable.append({"content": content_, "values": j})
+    logger.info("Start get data from")
+    parser = BeautifulSoup(content_original, 'html.parser')
+    target_classes = ["dados-tabelados", "dados-detalhados"]
+    for table_content in parser.find_all("section", class_=target_classes):
+        class_section = table_content["class"][0]
+        if class_section == 'dados-tabelados':
+            key_parent = "dados_basicos"
+        else:
+            key_parent = "".join([
+                x.string.strip() for x in
+                table_content.button.contents if x.string])
+            key_parent = normalize_text(key_parent)
+        # print(key_parent)
+        data[key_parent] = {}
 
-    counter_subtable = 0
-    if paginator:
-        table_content = table_content[-1:]
+        for sub_content in table_content.find_all("div", class_='col-xs-12'):
+            try:
+                key = sub_content.strong.string
+                key = normalize_text(key)
+                value = " ".join([
+                    x.string.strip() for x in sub_content.find_all("span")
+                    if x.string
+                ]).replace("\t", " ")
+                if not value:
+                    value = "".join([
+                        x.string.strip() for x in sub_content.find_all("a")
+                        if x.string
+                    ]).replace("\t", " ")
+                value = REMOVE_SPACES_REGEX.sub(" ", value)
+                data[key_parent][key] = try_numeric(value)
+            except:
+                print("Falha na key", key)
 
-    for i, table in enumerate(table_content):
-        head = []
-        skip = False
-        qt_lines_sub = -1
-        if counter_subtable < len(content_subtable):
-            qt_lines_sub = content_subtable[counter_subtable]['values']
-        rotulo = []
-        count_rotulo = 0
-        duo_rotulo = False
-        referency = 0
-        class_tr_rotulo = ''
-        last_key_tr = ''
-        last_key_th = ''
-        for j, content in enumerate(match_tr.finditer(table)):
-            line = content.group('content_tr').strip()
+    data["documentos_relacionados"] = get_related_documents(data)
+    data["detalhamento_do_gasto"] = get_expenses_detail(data)
+    related_docs_links = [
+        "{}/{}/{}/{}?ordenarPor=fase&direcao=desc".format(
+            data["geral_data"]["url_base"],
+            data["geral_data"]["session"],
+            doc["fase"].lower(),
+            doc["documento"],
+        ) for doc in data["documentos_relacionados"]
+    ]
+    # print(related_docs_links)
+    save_or_update(data)
 
-            if 'subtabela' in line:
-                data[head[0]][last_key_th] = content_subtable[counter_subtable][
-                    'content']
-                counter_subtable += 1
-                skip = True
-                continue
-            if skip and qt_lines_sub >= 0:
-                qt_lines_sub -= 1
-                continue
-            else:
-                skip = False
-
-            class_tr = content.group('class_tr')
-
-            sub_head = []
-            for z, content_row in enumerate(match_content.finditer(line)):
-                content_value = content_row.group('content').strip()
-                if class_tr in ('cabecalho', 'titulo'):
-                    content_value = normalize_text(content_value).replace(
-                        '_/_', '_')
-                    last_key_tr = content_value
-                    head.append(last_key_tr)
-                    if paginator:
-                        continue
-                    if class_tr == 'titulo':
-                        data[head[-1]] = {}
-                        continue
-                    else:
-                        data[head[0]][head[-1]] = {}
-                        continue
-
-                class_content = content_row.group('class')
-                if duo_rotulo and class_tr_rotulo != class_tr:
-                    count_rotulo = 0
-                    duo_rotulo = False
-
-                if class_content and class_content in ('rotulo'):
-                    content_value = normalize_text(content_value).replace(
-                        '_/_', '_')
-                    last_key_th = content_value
-                    sub_head.append(last_key_th)
-                    rotulo.append(last_key_th)
-                    count_rotulo += 1
-                    if not duo_rotulo and count_rotulo == 2:
-                        referency = j - 1
-                        duo_rotulo = True
-                        class_tr_rotulo = class_tr
-
-                    if len(head) > 1:
-                        if duo_rotulo:
-                            data[head[0]][head[-1]][rotulo[referency]][
-                                sub_head[-1]] = {}
-                        else:
-                            data[head[0]][head[-1]][sub_head[-1]] = {}
-                    else:
-                        if duo_rotulo:
-                            data[head[0]][rotulo[referency]][sub_head[-1]] = {}
-                        else:
-                            data[head[0]][sub_head[-1]] = {}
-                else:
-                    count_rotulo -= 1
-                    content_value = try_numeric(content_value)
-                    if len(head) > 1 and not sub_head:
-                        if not data[head[0]][head[z + 1]]:
-                            data[head[0]][head[z + 1]] = [content_value]
-                        else:
-                            data[head[0]][head[z + 1]].append(content_value)
-                    else:
-                        if not duo_rotulo:
-                            if not data[head[0]][sub_head[-1]]:
-                                data[head[0]][sub_head[-1]] = [content_value]
-                            else:
-                                data[head[0]][sub_head[-1]].append(
-                                    content_value)
-                        else:
-                            if not data[head[0]][rotulo[referency]][
-                                                            sub_head[-1]]:
-                                data[head[0]][rotulo[referency]][
-                                    sub_head[-1]] = [content_value]
-                            else:
-                                data[head[0]][rotulo[referency]][
-                                    sub_head[-1]].append(content_value)
-
-                link_document = content_row.group('link_document')
-                if link_document:
-                    new_url = data['geral_data']['url_base'] + '/'
-                    new_url += data['geral_data']['session'] + '/'
-                    new_url += link_document
-                    if new_url not in visited_links:
-                        docs_relacionados.append(new_url)
-
-    if not paginator:
-        data = get_paginator_content(content_original, data, visited_links)
-        save_or_update(data)
-
-    client.url.set_chunk_url(docs_relacionados)
-    return data
-
-
-def get_paginator_content(content_original, data, visited_links):
-    paginas = get_paginator.findall(content_original)
-    end_link_paginator = '&pagina=%s#paginacao'
-    for pg in paginas[:1]:
-        _, end = pg
-        for next_pg in xrange(1, int(end) + 1):
-            url_ = data['geral_data']['url_base'] + '/'
-            url_ += data['geral_data']['session'] + "/"
-            url_ += data['geral_data']['type_doc'] + '?documento='
-            url_ += data['geral_data']['num_doc']
-
-            if next_pg == 1:
-                link_ = url_
-                link_page1_with_end_link = url_ + end_link_paginator % next_pg
-                if link_page1_with_end_link in visited_links:
-                    continue
-            else:
-                link_ = url_ + end_link_paginator % next_pg
-
-            if link_ not in visited_links:
-                _id, prx = get_any_proxy()
-                try:
-                    result = cleaned_content(link_, visited_links, prx)
-                    no_spaces = result
-                    data = load_content(
-                        content_original=no_spaces, paginator=True,
-                        data=data, visited_links=visited_links
-                    )
-                    proxy_dao.mark_unused_proxy(_id)
-                except Exception:
-                    proxy_dao.mark_unused_proxy(_id, error=True)
-                    raise
+    client.url.set_chunk_url(related_docs_links)
     return data
 
 
@@ -384,4 +307,4 @@ if __name__ == '__main__':
     data_doc = {}
     visited_link = [url]
 
-    print 'finish in: ', time.time() - start_
+    print('finish in: ', time.time() - start_)

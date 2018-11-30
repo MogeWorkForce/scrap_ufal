@@ -10,7 +10,7 @@ MODE = os.environ.get('MODE', 'DEV')
 if MODE == 'PROD':
     url_dao = UrlManagerDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    url_dao = UrlManagerDao(host='172.17.0.1')
+    url_dao = UrlManagerDao()
 
 
 def feed_urls():
