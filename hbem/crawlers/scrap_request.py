@@ -20,7 +20,7 @@ level_debug = logging.DEBUG
 logger.setLevel(level_debug)
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)/'
-                    r'(?P<type_doc>[^?]*)?.*?/(?P<num_doc>[a-zA-Z0-9]*)')
+                       r'(?P<type_doc>[^?]*)?.*?/(?P<num_doc>[a-zA-Z0-9]*)')
 match = re.compile(r'<table class="tabela">(.*?)<\/table>')
 match_subtable = re.compile(r'<table class="subtabela">(.*?)<\/table>')
 get_paginator = re.compile(
@@ -37,7 +37,11 @@ match_tr = re.compile(
 
 MODE = os.environ.get('MODE', 'DEV')
 URL_RELATED_DOCUMENTS = "/despesas/documento/documentos-relacionados/resultado"
-URL_EXPENSES_DETAIL = "/despesas/documento/empenho/detalhamento/resultado"
+URL_EXPENSES_DETAIL = "/despesas/documento/{}/detalhamento/resultado"
+URL_IMPACTED_EMPENHOS = "/despesas/documento/{}/empenhos-impactados/resultado"
+URL_DESTINATION_BANKS = "/despesas/documento/{}/listaBancos/resultado"
+URL_PAIED_INVOICES = "/despesas/documento/{}/listaFaturas/resultado"
+URL_PAIED_PRECATORIOS = "/despesas/documento/{}/listaPrecatorios/resultado"
 
 if MODE == 'PROD':
     client = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
@@ -78,6 +82,7 @@ def get_general_data(url, data=None):
         data['geral_data'] = {}
 
     for dt in base_data.finditer(url):
+        print(dt.groups())
         data['geral_data']['url_base'] = dt.group("host")
         data['geral_data']['type_doc'] = dt.group("type_doc")
         data['geral_data']['num_doc'] = dt.group("num_doc")
@@ -130,17 +135,19 @@ def get_related_documents(data):
         "direcaoOrdenacao": "desc",
         "colunaOrdenacao": "fase",
         "colunasSelecionadas": "data,fase,documentoResumido,especie",
-        "fase": data["geral_data"]["type_doc"].capitalize(),
+        "fase": data["dados_basicos"]["fase"],
         "codigo": data["geral_data"]["num_doc"],
         "_": "1543455305806"
     }
 
     headers = {'content-type': 'application/x-www-form-urlencoded'}
     url = data["geral_data"]["url_base"] + URL_RELATED_DOCUMENTS
+    logger.info(url)
     _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("related_docs", response.url))
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
         proxy_dao.mark_unused_proxy(_id, error=True)
@@ -157,16 +164,149 @@ def get_expenses_detail(data):
         "direcaoOrdenacao": "desc",
         "colunaOrdenacao": "valorUnitario",
         "colunasSelecionadas": "subitem,quantidade,valorUnitario,valorTotal,descricao",
-        "fase": data["geral_data"]["type_doc"].capitalize(),
+        "fase": data["dados_basicos"]["fase"],
         "codigo": data["geral_data"]["num_doc"],
         "_": "1543460544120"
     }
     headers = {'content-type': 'application/x-www-form-urlencoded'}
-    url = data["geral_data"]["url_base"] + URL_EXPENSES_DETAIL
+    url = data["geral_data"]["url_base"] + URL_EXPENSES_DETAIL.format(
+        data["geral_data"]["type_doc"]
+    )
+    logger.info(url)
     _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("expenses_details", response.url))
+        tmp_data = response.json()["data"]
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        return []
+
+    return tmp_data
+
+
+def get_impacted_empenhos(data):
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "100",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "empenhoResumido",
+        "colunasSelecionadas": "empenhoResumido,valorPago,valorRestoInscrito,"
+                               "valorRestoCancelado,valorRestoPago",
+        "fase": data["dados_basicos"]["fase"],
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543802606317"
+    }
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_IMPACTED_EMPENHOS.format(
+        data["geral_data"]["type_doc"]
+    )
+    logger.info(url)
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("impacted_empenhos", response.url))
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        raise
+
+    return response.json()["data"]
+
+
+def get_destination_banks(data):
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "15",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "nomeBanco",
+        "colunasSelecionadas": "codigoLista,skBanco,nomeBanco,numeroAgencia,"
+                               "valorLancamento",
+        "fase": data["dados_basicos"]["fase"],
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543802606318"
+    }
+
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_DESTINATION_BANKS.format(
+        data["geral_data"]["type_doc"]
+    )
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("get_destination_banks", response.url))
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        raise
+
+    return response.json()["data"]
+
+
+def get_paied_invoices(data):
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "100",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "codigoSequencia",
+        "colunasSelecionadas": "codigoLista,codigoSequencia,"
+                               "codFavorecidoFormatado,nomFavorecido,"
+                               "valorLancamento,valorDesconto,valorJuros,"
+                               "valorDeducao,valorAcrescimo",
+        "fase": data["dados_basicos"]["fase"],
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543802606319"
+    }
+
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_PAIED_INVOICES.format(
+        data["geral_data"]["type_doc"]
+    )
+    logger.info(url)
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("get_paied_invoices", response.url))
+        proxy_dao.mark_unused_proxy(_id)
+    except Exception:
+        proxy_dao.mark_unused_proxy(_id, error=True)
+        raise
+
+    return response.json()["data"]
+
+
+def get_paied_precatorios(data):
+
+    querystring = {
+        "paginacaoSimples": "true",
+        "tamanhoPagina": "15",
+        "offset": "0",
+        "direcaoOrdenacao": "desc",
+        "colunaOrdenacao": "valorPrecatorio",
+        "colunasSelecionadas": "codigoLista,numeroParcela,valorPrecatorio",
+        "fase": data["dados_basicos"]["fase"],
+        "codigo": data["geral_data"]["num_doc"],
+        "_": "1543802606320"
+    }
+
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    url = data["geral_data"]["url_base"] + URL_PAIED_PRECATORIOS.format(
+        data["geral_data"]["type_doc"]
+    )
+    logger.info(url)
+    _id, proxy = get_any_proxy()
+    try:
+        response = requests.get(
+            url, headers=headers, params=querystring, proxies=proxy)
+        logger.info(("get_paied_precatorios", response.url))
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
         proxy_dao.mark_unused_proxy(_id, error=True)
@@ -218,6 +358,15 @@ def load_content(content_original, paginator=False, data=None,
 
     data["documentos_relacionados"] = get_related_documents(data)
     data["detalhamento_do_gasto"] = get_expenses_detail(data)
+
+    if data["geral_data"]["type_doc"] in ["pagamento", "liquidacao"]:
+        data["empenhos_impactados"] = get_impacted_empenhos(data)
+
+    if data["geral_data"]["type_doc"] == "pagamento":
+        data["bancos_destinatarios"] = get_destination_banks(data)
+        data["faturas_pagas"] = get_paied_invoices(data)
+        data["precatorios_pagos"] = get_paied_precatorios(data)
+
     related_docs_links = [
         "{}/{}/{}/{}?ordenarPor=fase&direcao=desc".format(
             data["geral_data"]["url_base"],
