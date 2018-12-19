@@ -9,7 +9,7 @@ MODE = os.environ.get('MODE')
 if MODE == 'PROD':
     docs_dao = DocumentsDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    docs_dao = DocumentsDao(host='172.17.0.1')
+    docs_dao = DocumentsDao()
 
 
 def fix_old_docs_to_new_pattern():

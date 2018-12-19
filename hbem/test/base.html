@@ -1,0 +1,1083 @@
+
+
+
+
+
+<!DOCTYPE HTML>
+<html lang="pt-br">
+<head>
+    <meta http-equiv="Content-Type"     content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible"  content="IE=edge">
+    <meta name="viewport"               content="width=device-width,initial-scale=1.0">
+    <meta name="description"            content="">
+    <meta name="author"                 content=""/>
+    <title>Detalhamento do documento de Empenho - Portal da transparência</title>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-1665737-25"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-1665737-25');
+    </script>
+
+    <!-- BARRA DO TOPO DO GOVERNO -->
+    <link rel="stylesheet"              href="/static/libs/font-awesome-4.4.0/css/font-awesome.min.css?v=1.5.0" />
+    <link rel="stylesheet"              href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,700,800%7COpen+Sans+Condensed:700%7CRoboto+Condensed:400,700" type="text/css" />
+    <link rel="stylesheet"              href="/static/libs/bootstrap/css/bootstrap.min.css?v=1.5.0" />
+
+    <!--[if IE]>
+    <style>
+        select {
+            padding: 0px 1% !important;
+            background-image: none !important;
+        }
+    </style>
+    <![endif]-->
+
+    <link rel="stylesheet" href="/static/css/layoutStyle.css?v=1.5.0" />
+    <link rel="stylesheet" href="/static/libs/timeline/timeline.css?v=1.5.0" />
+
+    <script type="text/javascript"      src="/static/libs/jquery/jquery-1.12.0.min.js"></script>
+
+</head>
+
+
+<body>
+
+
+
+
+<header id="header" role="banner">
+    <section class="container">
+        <ul role="menubar">
+            <li role="menuitem"><a href="#aconteudo" accesskey="1">Ir para o conteúdo <span>1</span></a></li>
+            <li role="menuitem"><a href="#amenu-navegacao" accesskey="2">Ir para o menu <span>2</span></a></li>
+            <li role="menuitem"><a href="#termoBuscaPortal" accesskey="3">Ir para a busca <span>3</span></a></li>
+            <li role="menuitem"><a href="#arodape" accesskey="4">Ir para o rodapé <span>4</span></a></li>
+        </ul>
+
+        <ul class="menu-borda" role="menubar">
+            <li role="menuitem"><a href="#" accesskey="5" id="aumentar-fonte">A+</a></li>
+            <li role="menuitem"><a href="#" accesskey="6" id="diminuir-fonte">A-</a></li>
+            <li role="menuitem"><a href="#" accesskey="7">ACESSIBILIDADE</a></li>
+            <li role="menuitem"><a href="#" accesskey="8" id="alto-contraste">ALTO CONTRASTE</a></li>
+            <li role="menuitem"><a href="/mapa-do-site" accesskey="9">MAPA DO SITE</a></li>
+        </ul>
+
+        <div class="logo">
+            <h1><a href="/">Portal da Transparência</a></h1>
+            <span>MINISTÉRIO DA TRANSPARÊNCIA E CONTROLADORIA-GERAL DA UNIÃO</span>
+        </div>
+
+            <form id="form-busca-topo" class="form-busca-topo" action="/busca" method="get">
+                <fieldset>
+                    <legend>Formulário de busca</legend>
+
+                    <label for="termoBuscaPortal" class="sr-only">Busque por órgão, cidade, CNPJ, servidor...</label>
+                    <input type="text" id="termoBuscaPortal" name="termo"
+                           placeholder="Busque por órgão, cidade, CNPJ, servidor...">
+
+                    <button type="submit" aria-label="Enviar dados do formulário de busca"><span
+                            class="sr-only">Buscar</span><i class="glyphicon glyphicon-search"></i></button>
+                </fieldset>
+            </form>
+
+    </section>
+
+<nav id="amenu-navegacao" class="menu-navegacao" role="navigation">
+    <div class="container container--tipo-b">
+        <button type="button" id="botaoMenu"><i class="glyphicon glyphicon-menu-hamburger"></i></button>
+        <div class="menu-wrapper" style="float: left;">
+            <ul role="menubar">
+                <li role="menuitem" aria-haspopup="true" class="has-submenu">
+                    <a href="#">Sobre o Portal</a>
+                    <ul role="menu" aria-hidden="true" aria-haspopup="true" class="is-submenu">
+                        <li role="menuitem"><a href="/sobre/o-que-e-e-como-funciona" onclick="window.open('/sobre/o-que-e-e-como-funciona', '_self')">O que é e como funciona</a></li>
+                        <li role="menuitem"><a href="/sobre/o-que-voce-encontra-no-portal" onclick="window.open('/sobre/o-que-voce-encontra-no-portal', '_self')">O que você encontra no Portal</a></li>
+                        <li role="menuitem"><a href="/sobre/legislacao" onclick="window.open('/sobre/legislacao', '_self')">Legislação</a></li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Dados do portal</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/origem-dos-dados" onclick="window.open('/origem-dos-dados', '_self')">Origem e atualização</a></li>
+                                <li><a href="/download-de-dados" onclick="window.open('/download-de-dados', '_self')">Dados abertos</a></li>
+                                <li><a href="/api-de-dados" onclick="window.open('/api-de-dados', '_self')">API de Dados</a></li>
+                                <li><a href="/download-de-dados/historico" onclick="window.open('/download-de-dados/historico', '_self')">Histórico de dados</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Contato</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="http://www.acessoainformacao.gov.br/" onclick="window.open('http://www.acessoainformacao.gov.br/', '_self')">Faça um pedido de informação para o Governo Federal</a></li>
+                                <li><a href="https://sistema.ouvidorias.gov.br/publico/Manifestacao/RegistrarManifestacao.aspx?tipo=1" onclick="window.open('https://sistema.ouvidorias.gov.br/publico/Manifestacao/RegistrarManifestacao.aspx?tipo=1', '_self')">Faça uma denúncia</a></li>
+                                <li><a href="https://sistema.ouvidorias.gov.br/publico/Manifestacao/RegistrarManifestacao.aspx" onclick="window.open('https://sistema.ouvidorias.gov.br/publico/Manifestacao/RegistrarManifestacao.aspx', '_self')">Registre suas sugestões, dúvidas e reclamações</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li role="menuitem" aria-haspopup="true" class="has-submenu">
+                    <a href="#">Painéis</a>
+                    <ul role="menu" aria-hidden="true" aria-haspopup="true" class="is-submenu">
+                        <li role="menuitem"><a href="/orgaos" onclick="window.open('/orgaos', '_self')">Panorama do Governo Federal</a></li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Receitas e despesas públicas</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/orcamento" onclick="window.open('/orcamento', '_self')">Orçamento anual</a></li>
+                                <li><a href="/receitas" onclick="window.open('/receitas', '_self')">Receitas públicas</a></li>
+                                <li><a href="/despesas" onclick="window.open('/despesas', '_self')">Despesas públicas</a></li>
+                                <li><a href="/transferencias" onclick="window.open('/transferencias', '_self')">Recursos transferidos</a></li>
+                                <li><a href="/cartoes" onclick="window.open('/cartoes', '_self')">Gastos por cartões de pagamento</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Políticas públicas</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/funcoes" onclick="window.open('/funcoes', '_self')">Áreas de atuação do governo</a></li>
+                                <li><a href="/programas-de-governo" onclick="window.open('/programas-de-governo', '_self')">Programas de governo</a></li>
+                                <li><a href="/beneficios" onclick="window.open('/beneficios', '_self')">Benefícios aos cidadãos</a></li>
+                                <li><a href="/programas-e-acoes/busca/lista" onclick="window.open('/programas-e-acoes/busca/lista', '_self')">Programas e ações orçamentárias</a></li>
+                                <li><a href="/emendas" onclick="window.open('/emendas', '_self')">Emendas parlamentares</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Órgãos e Servidores</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/orgaos-superiores" onclick="window.open('/orgaos-superiores', '_self')">Órgãos</a></li>
+                                <li><a href="/servidores" onclick="window.open('/servidores', '_self')">Servidores públicos</a></li>
+                                <li><a href="/viagens" onclick="window.open('/viagens', '_self')">Viagens a serviço</a></li>
+                                <li><a href="/imoveis-funcionais" onclick="window.open('/imoveis-funcionais', '_self')">Imóveis funcionais</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Licitações, contratos e convênios</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/licitacoes" onclick="window.open('/licitacoes', '_self')">Licitações</a></li>
+                                <li><a href="/contratos" onclick="window.open('/contratos', '_self')">Contratos</a></li>
+                                <li><a href="/convenios" onclick="window.open('/convenios', '_self')">Convênios e outros acordos</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem"><a href="/sancoes" onclick="window.open('/sancoes', '_self')">Sanções aplicadas a pessoas físicas, jurídicas e servidores</a></li>
+                        <li role="menuitem"><a href="/localidades" onclick="window.open('/localidades', '_self')">Localidades</a></li>
+                    </ul>
+                </li>
+                <li role="menuitem" aria-haspopup="true" class="has-submenu">
+                    <a href="#">Consultas Detalhadas</a>
+
+                    <ul role="menu" aria-hidden="true" aria-haspopup="true" class="is-submenu">
+                        <li role="menuitem"><a href="/orcamento/receitas" onclick="window.open('/orcamento/receitas', '_self')">Orçamento da receita</a></li>
+                        <li role="menuitem"><a href="/receitas/consulta" onclick="window.open('/receitas/consulta', '_self')">Execução de receitas públicas</a></li>
+                        <li role="menuitem"><a href="/orcamento/despesas" onclick="window.open('/orcamento/despesas', '_self')">Orçamento da despesa</a></li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Execução de despesas públicas</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/despesas/orgao" onclick="window.open('/despesas/orgao', '_self')">Por órgão</a></li>
+                                <li><a href="/despesas/funcao" onclick="window.open('/despesas/funcao', '_self')">Por área de atuação</a></li>
+                                <li><a href="/despesas/programa-e-acao" onclick="window.open('/despesas/programa-e-acao', '_self')">Por programa/ação orçamentária</a></li>
+                                <li><a href="/despesas/consulta" onclick="window.open('/despesas/consulta', '_self')">Por período</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem"><a href="/despesas/recursos-recebidos" onclick="window.open('/despesas/recursos-recebidos', '_self')">Recebimento de recursos por favorecido</a></li>
+                        <li role="menuitem"><a href="/despesas/favorecido" onclick="window.open('/despesas/favorecido', '_self')">Documentos diários de execução da despesa pública</a></li>
+                        <li role="menuitem"><a href="/transferencias/consulta" onclick="window.open('/transferencias/consulta', '_self')">Recursos Transferidos por UF e Município </a></li>
+                        <li role="menuitem"><a href="/emendas/consulta" onclick="window.open('/emendas/consulta', '_self')">Emendas parlamentares</a></li>
+                        <li role="menuitem"><a href="/licitacoes/consulta" onclick="window.open('/licitacoes/consulta', '_self')">Licitações</a></li>
+                        <li role="menuitem"><a href="/contratos/consulta" onclick="window.open('/contratos/consulta', '_self')">Contratos</a></li>
+                        <li role="menuitem"><a href="/convenios/consulta" onclick="window.open('/convenios/consulta', '_self')">Convênios e outros acordos</a></li>
+                        <li role="menuitem"><a href="/cartoes/consulta" onclick="window.open('/cartoes/consulta', '_self')">Gastos por meio de cartões de pagamento</a></li>
+                        <li role="menuitem"><a href="/beneficios/consulta" onclick="window.open('/beneficios/consulta', '_self')">Benefícios aos cidadãos</a></li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Imóveis funcionais</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/imoveis-funcionais/imoveis" onclick="window.open('/imoveis-funcionais/imoveis', '_self')">Relação de imóveis</a></li>
+                                <li><a href="/imoveis-funcionais/permissionarios" onclick="window.open('/imoveis-funcionais/permissionarios', '_self')">Ocupantes de imóveis</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem"><a href="/servidores/consulta" onclick="window.open('/servidores/consulta', '_self')">Servidores públicos</a></li>
+                        <li role="menuitem"><a href="/viagens/consulta" onclick="window.open('/viagens/consulta', '_self')">Viagens a serviço</a></li>
+                        <li role="menuitem"><a href="/localidades/busca/lista" onclick="window.open('/localidades/busca/lista', '_self')">Localidades</a></li>
+                        <li role="menuitem"><a href="/pessoa-fisica/busca/lista" onclick="window.open('/pessoa-fisica/busca/lista', '_self')">Pessoas físicas</a></li>
+                        <li role="menuitem"><a href="/pessoa-juridica/busca/lista" onclick="window.open('/pessoa-juridica/busca/lista', '_self')">Pessoas jurídicas</a></li>
+                        <li role="menuitem" class="has-submenu" aria-haspopup="true">
+                            <a href="#">Sanções aplicadas</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/sancoes/ceis" onclick="window.open('/sancoes/ceis', '_self')">Cadastro Nacional de Empresas Inidôneas e Suspensas (CEIS)</a></li>
+                                <li><a href="/sancoes/cnep" onclick="window.open('/sancoes/cnep', '_self')">Cadastro Nacional de Empresas Punidas (CNEP)</a></li>
+                                <li><a href="/sancoes/cepim" onclick="window.open('/sancoes/cepim', '_self')">Cadastro de Entidades Privadas sem Fins Lucrativos Impedidas (CEPIM)</a></li>
+                                <li><a href="/sancoes/ceaf" onclick="window.open('/sancoes/ceaf', '_self')">Cadastro de Expulsões da Administração Federal (CEAF)</a></li>
+                                <li><a href="/sancoes/acordos-leniencia" onclick="window.open('/sancoes/acordos-leniencia', '_self')">Acordos de leniência</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li role="menuitem" aria-haspopup="true" class="has-submenu">
+                    <a href="#">Controle social</a>
+                    <ul role="menu" aria-hidden="true" aria-haspopup="true" class="is-submenu">
+                        <li role="menuitem"><a href="/pagina-interna/603399-controle-social" onclick="window.open('/pagina-interna/603399-controle-social', '_self')">Controle social</a></li>
+                        <li role="menuitem"><a href="/controle-social/o-portal-como-ferramenta" onclick="window.open('/controle-social/o-portal-como-ferramenta', '_self')">O Portal como ferramenta</a></li>
+                        <li role="menuitem"><a href="http://www.acessoainformacao.gov.br/" onclick="window.open('http://www.acessoainformacao.gov.br/', '_self')">Acesso à informação</a></li>
+                        <li role="menuitem"><a href="http://governoaberto.cgu.gov.br/" onclick="window.open('http://governoaberto.cgu.gov.br/', '_self')">Governo Aberto</a></li>
+                    </ul>
+                </li>
+                <li role="menuitem"><a href="/redetransparencia" onclick="window.open('/redetransparencia', '_self')">Rede de Transparência</a></li>
+                <li role="menuitem"><a href="/notificacoes" onclick="window.open('/notificacoes', '_self')">Receba Notificações</a></li>
+                <li role="menuitem" aria-haspopup="true" class="has-submenu">
+                    <a href="#">Aprenda mais</a>
+                    <ul role="menu" aria-hidden="true" aria-haspopup="true" class="is-submenu">
+                        <li role="menuitem" class="has-submenu submenu--right" aria-haspopup="true">
+                            <a href="#">Entenda a gestão pública</a>
+                            <ul role="menu" aria-hidden="true">
+                                <li><a href="/entenda-a-gestao-publica/orcamento-publico" onclick="window.open('/entenda-a-gestao-publica/orcamento-publico', '_self')">Orçamento público</a></li>
+                                <li><a href="/entenda-a-gestao-publica/execucao-receita-publica" onclick="window.open('/entenda-a-gestao-publica/execucao-receita-publica', '_self')">Execução da receita pública</a></li>
+                                <li><a href="/entenda-a-gestao-publica/execucao-despesa-publica" onclick="window.open('/entenda-a-gestao-publica/execucao-despesa-publica', '_self')">Execução da despesa pública</a></li>
+                                <li><a href="/entenda-a-gestao-publica/programas-de-governo" onclick="window.open('/entenda-a-gestao-publica/programas-de-governo', '_self')">Programas de Governo</a></li>
+                                <li><a href="/entenda-a-gestao-publica/beneficios-ao-cidadao" onclick="window.open('/entenda-a-gestao-publica/beneficios-ao-cidadao', '_self')">Benefícios ao cidadão</a></li>
+                                <li><a href="/entenda-a-gestao-publica/servidores-publicos" onclick="window.open('/entenda-a-gestao-publica/servidores-publicos', '_self')">Servidores públicos</a></li>
+                                <li><a href="/entenda-a-gestao-publica/licitacoes-e-contratacoes" onclick="window.open('/entenda-a-gestao-publica/licitacoes-e-contratacoes', '_self')">Licitações e contratações</a></li>
+                                <li><a href="/entenda-a-gestao-publica/convenios-e-outros-acordos" onclick="window.open('/entenda-a-gestao-publica/convenios-e-outros-acordos', '_self')">Convênios e outros acordos</a></li>
+                                <li><a href="/entenda-a-gestao-publica/sancoes-aplicadas" onclick="window.open('/entenda-a-gestao-publica/sancoes-aplicadas', '_self')">Sanções aplicadas</a></li>
+                            </ul>
+                        </li>
+                        <li role="menuitem"><a href="/usando-o-portal" onclick="window.open('/usando-o-portal', '_self')">Usando o portal</a></li>
+                        <li role="menuitem"><a href="/perguntas-frequentes" onclick="window.open('/perguntas-frequentes', '_self')">Perguntas frequentes</a></li>
+                        <li role="menuitem"><a href="/glossario" onclick="window.open('/glossario', '_self')">Glossário</a></li>
+                        <li role="menuitem"><a href="/videos" onclick="window.open('/videos', '_self')">Vídeos</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav></header>
+
+<main role="main">
+
+<section class="box-identificacao">
+    <div class="container">
+        <span class="breadcrumb">
+                    <strong>Você está aqui:</strong>
+                    <span typeof="v:Breadcrumb">
+                        <a href="/" rel="v:url" property="v:title">Início</a>
+                    </span>
+                            <span typeof="v:Breadcrumb"> » <a href="/despesas" rel="v:url" property="v:title">Despesas</a></span>
+                            <span typeof="v:Breadcrumb"> » <a href="/despesas/consulta" rel="v:url" property="v:title">Consulta</a></span>
+                            <span typeof="v:Breadcrumb"> » <a href="/despesas/favorecido" rel="v:url" property="v:title">Documentos de execução da despesa pública</a></span>
+                            » <strong class="breadcrumb-atual" property="v:title">Documento</strong>
+                </span>
+    </div>
+    <hr>
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-9">
+                    <h2>Detalhamento do documento de Empenho</h2>
+                </div>
+                <div class="col-md-3" id="divButtonOrigemDados">
+                        <a href="/origem-dos-dados" role="button">Origem dos dados</a>
+                </div>
+            </div>
+        </div>
+</section>
+    <div id="aconteudo" class="container">
+<div class="row">
+    <div class="col-xs-12">
+        <div id="alerts" class="floating-alerts">
+
+
+
+
+        </div>
+    </div>
+</div>
+    </div>
+
+
+<div class="container">
+
+    <section class="dados-tabelados">
+
+
+            <div class="row">
+                <div class="col-xs-12 col-sm-3">
+                    <strong>Nº do documento</strong>
+                    <span>2014NE808480</span>
+                </div>
+                <div class="col-xs-12 col-sm-3">
+                    <strong>Data</strong>
+                    <span>03/12/2014</span>
+                </div>
+                <div class="col-xs-12 col-sm-6">
+                    <strong>Descrição</strong>
+                    <span>Nota de Empenho (NE)</span>
+                </div>
+            </div>
+
+            <br/>
+
+            <div class="row">
+                <div class="col-xs-12 col-sm-3">
+                    <strong>Fase</strong>
+                    <span>Empenho</span>
+                </div>
+                <div class="col-xs-12 col-sm-3">
+                        <strong>Espécie/tipo de documento</strong>
+                        <span>ORIGINAL</span>
+                </div>
+                <div class="col-xs-12 col-sm-6">
+                    <strong>Valor do documento</strong>
+                    <span>R$ 0,00</span>
+                </div>
+            </div>
+
+
+        <br/>
+
+        <div class="row">
+            <div class="col-xs-12">
+                <strong>Observação do documento</strong>
+                <span>OBRAS EM ANDAMENTO - CONTRATO:39/13 - VIG.19/02/15                            PROC.201880/14-75 - PCU  PROC ORIGEM: 2012CC00017                                                                                                           </span>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="dados-detalhados">
+        <button class="grafico-tabela__botao-collapse collapsed" data-toggle="collapse" data-target="#collapse-1" aria-expanded="false" aria-controls="collapseExample" type="button">
+            <i class="fa fa-fw fa-minus-square-o"></i>
+            <i class="fa fa-fw fa-plus-square-o"></i>
+            Dados do Favorecido
+        </button>
+
+        <div  id="collapse-1" class="grafico-tabela__box-collapse collapse">
+            <div class="bloco box-tabela-principal">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>CPF/CNPJ/Outros</strong>
+                        <span>
+                                <a href="/pessoa-juridica/07382337000150">07.382.337/0001-50</a>
+                        </span>
+                    </div>
+                    <div class="col-xs-12 col-sm-9">
+                        <strong>Nome</strong>
+                        <span>KUMER ENGENHARIA E CONSTRUCOES - EIRELI - EPP</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section class="dados-detalhados">
+        <button class="grafico-tabela__botao-collapse collapsed" data-toggle="collapse" data-target="#collapse-2" aria-expanded="false" aria-controls="collapseExample" type="button">
+            <i class="fa fa-fw fa-minus-square-o"></i>
+            <i class="fa fa-fw fa-plus-square-o"></i>
+            Dados do Órgão emitente
+                        </button>
+
+        <div id="collapse-2" class="grafico-tabela__box-collapse collapse">
+            <div class="bloco box-tabela-principal">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Órgão Superior</strong>
+                        <span class="btwline">26000</span>
+                        <span><a href="/orgaos/26000-ministerio-da-educacao">MINISTERIO DA EDUCACAO</a></span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Órgão / Entidade Vinculada</strong>
+                        <span class="btwline">26241</span>
+                        <span>UNIVERSIDADE FEDERAL DO PARANA</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Unidade Gestora</strong>
+                        <span class="btwline">153079</span>
+                        <span>UNIVERSIDADE FEDERAL DO PARANA</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Gestão</strong>
+                        <span class="btwline">15232</span>
+                        <span>UNIVERSIDADE FEDERAL DO PARANA               </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="dados-detalhados">
+        <button class="grafico-tabela__botao-collapse collapsed" data-toggle="collapse" data-target="#collapse-3" aria-expanded="true" aria-controls="collapseExample" type="button">
+            <i class="fa fa-fw fa-minus-square-o"></i>
+            <i class="fa fa-fw fa-plus-square-o"></i>
+            Dados detalhados do empenho
+        </button>
+
+        <div id="collapse-3" class="grafico-tabela__box-collapse collapse" aria-expanded="true">
+
+            <div class="bloco">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-4">
+                        <strong>Processo</strong>
+                        <span>33096/2012-66       </span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+            <div class="bloco-cinza">
+                <h3 class="titulo-3--menor2 sem-margem">Detalhes Orçamentários</h3>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Esfera</strong>
+                        <span>1 - Orçamento Fiscal</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Tipo de crédito</strong>
+                        <span>A - INICIAL (LOA)</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Fonte de recursos</strong>
+                        <span>12 - RECURSOS DEST.A MANUT.E DES.DO ENSINO        </span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Grupo da fonte de recursos</strong>
+                        <span>3 - Recursos do Tesouro - Exercícios Anteriores</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12">
+                        <strong>Unidade orçamentária</strong>
+                        <span>26241 - UNIVERSIDADE FEDERAL DO PARANA               </span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+            <div class="bloco">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Área de Atuação (Função)</strong>
+                        <span>12 - EDUCACAO</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Subfunção</strong>
+                        <span>364 - ENSINO SUPERIOR</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Programa</strong>
+                        <span>2032 - EDUCACAO SUPERIOR - GRADUACAO, POS-GRADUACAO, ENSINO, PESQUI</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Ação</strong>
+                        <span>20RK - FUNCIONAMENTO DE INSTITUICOES FEDERAIS DE ENSINO SUPERIOR</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Linguagem Cidadã</strong>
+                        <span></span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+
+                    <div class="col-xs-12 col-sm-12">
+                        <strong>Subtítulo (localizador)</strong>
+                        <span>20RK0041 - FUNCIONAMENTO DE INSTITUICOES FEDERAI - NO ESTADO DO PARANA</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12">
+                        <strong>Plano orçamentário - PO</strong>
+                        <span>0000 - FUNCIONAMENTO DE INSTITUICOES FEDERAIS DE ENSINO SUPERIOR</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-12">
+                        <strong>Regionalização do Gasto</strong>
+                        <span>0041 - NO ESTADO DO PARANÁ</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+            <div class="bloco-cinza">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Emenda Parlamentar</strong>
+                        <span>@           </span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Autor</strong>
+                        <span>Informação do autor não disponível</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+
+            <div class="bloco box-tabela-principal">
+                <h3 class="titulo-3--menor2 sem-margem">Detalhes Licitação/Contrato</h3>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Modalidade da Licitação</strong>
+                        <span>Concorrência</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Inciso</strong>
+                        <span></span>
+                    </div>
+                    <div class="col-xs-12 col-sm-3">
+                        <strong>Amparo</strong>
+                        <span>        </span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Referência da Dispensa ou Inexigibilidade</strong>
+                        <span></span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Nº convênio/ outro acordo</strong>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+            <div class="bloco-cinza box-tabela-principal">
+                <h3 class="titulo-3--menor2 sem-margem">Detalhe da Despesa</h3>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Categoria da Despesa</strong>
+                        <span>4 - DESPESA DE CAPITAL</span>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Grupo de Despesa</strong>
+                        <span>4 - INVESTIMENTOS</span>
+                    </div>
+                </div>
+
+                <br>
+
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Modalidade de Aplicação</strong>
+                        <span>90 - APLICACOES DIRETAS</span>
+                    </div>
+
+                    <div class="col-xs-12 col-sm-6">
+                        <strong>Elemento de Despesa</strong>
+                        <span>51 - OBRAS E INSTALACOES</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="quebra">
+
+            <div class="bloco box-tabela-principal">
+                <span class="dados-detalhados__titulo">Detalhamento do Gasto</span>
+
+                <ul class="menu-tabela">
+                    <li><a id="baixarDetalhamentoDoGasto" role="button"><i class="fa fa-fw fa-download"></i> Baixar</a></li>
+                </ul>
+
+                <div class="wrapper-table ativo">
+                    <i class="fa fa-circle-o-notch fa-spin loading-grande loading" style="display:none"></i>
+                    <table id="listaDetalhamentoDoGasto">
+                        <caption>Detalhamento do Gasto</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col" class="coluna-livre">Subitem da Despesa</th>
+                            <th scope="col" class="coluna-livre">Quantidade</th>
+                            <th scope="col" class="coluna-livre">Valor Unitário (R$) </th>
+                            <th scope="col" class="coluna-livre">Valor Total (R$) </th>
+                            <th scope="col" class="coluna-livre">Descrição</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <p class="text-right">
+                </p>
+            </div>
+
+            <hr class="quebra">
+
+
+        </div>
+    </section>
+
+
+    <section class="dados-detalhados">
+        <button class="grafico-tabela__botao-collapse collapsed" data-toggle="collapse" data-target="#collapse-4" aria-expanded="false" aria-controls="collapseExample" type="button">
+            <i class="fa fa-fw fa-minus-square-o"></i>
+            <i class="fa fa-fw fa-plus-square-o"></i>
+            Documentos relacionados
+        </button>
+
+        <div id="collapse-4" class="bloco box-tabela-principal collapse" aria-expanded="false" style="height: 30px;">
+            <ul class="menu-tabela">
+                <li><a href="#" role="button"><i class="fa fa-fw fa-download"></i> Baixar</a></li>
+            </ul>
+
+            <div class="wrapper-table ativo">
+                <i class="fa fa-circle-o-notch fa-spin loading-grande loading" style="display:none"></i>
+                <table id="listaDocumentosRelacionados">
+                    <caption>Documentos relacionados</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" class="coluna-livre">Data</th>
+                        <th scope="col" class="coluna-livre">Fase</th>
+                        <th scope="col" class="coluna-livre">Documento</th>
+                        <th scope="col" class="coluna-livre">Espécie / Tipo</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <hr class="quebra">
+        </div>
+    </section>
+
+
+</div>
+
+
+</main>
+
+
+<div class="sessao-duvidas" id="duvidas">
+    <section class="container">
+        <div class="box-duvidas compacto">
+            <button id="btnDuvidas" type="button" class="box-duvidas__botao-duvida"><i class="fa fa-question-circle"></i> <span>Dúvidas?</span></button>
+
+            <div id="box-duvidas" class="box-duvidas__box">
+                <button id="btnFecharBox" type="button" class="botao-fechar-box-duvidas"><i class="fa fa-times" aria-hidden="true"></i></button>
+
+                <div id="duvida-passo-1" class="passos ativo">
+                    <form class="formulario-duvida" action="#" method="post">
+                        <fieldset>
+                            <legend>Formulário de dúvidas</legend>
+
+                            <label for="duvida-texto">Qual é sua dúvida?</label>
+                            <textarea id="duvida-texto" placeholder="Digite palavras-chaves da sua dúvida" cols="30" rows="10" name="duvida-texto"></textarea>
+
+                            <input id="botaoBuscar" type="submit" class="duvida-enviar botao-info" value="Prosseguir">
+                        </fieldset>
+                    </form>
+                </div>
+                <div id="duvida-passo-2" class="lista-definicao passos">
+
+
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    $(function(){
+        var interrogacao = new Interrogacao();
+        interrogacao.inicializar();
+    });
+</script>
+
+
+<div id="divCompartilhar">
+    <div class="box-compartilhe">
+        <div class="container">
+            <ul class="nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#tab-compartilhe" aria-controls="tab-compartilhe" role="tab" data-toggle="tab" aria-expanded="true"><i class="fa fa-share-alt"></i> Compartilhe</a></li>
+                <li role="presentation" class=""><a href="#tab-notificacoes" aria-controls="tab-notificacoes" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-envelope"></i> Receba notificações</a></li>
+                <li role="presentation" class=""><a href="#tab-contato" aria-controls="tab-contato" role="tab" data-toggle="tab" aria-expanded="false"><i class="fa fa-bullhorn"></i> Contato</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="tab-compartilhe">
+                    <div class="box-midias-sociais">
+                        <span class="box-midias-sociais__titulo">Redes sociais</span>
+                        <ul>
+                            <li><a href="javascript:Compartilhar.gerarLinkWhatsapp();"  data-action="share/whatsapp/share" target="_blank"><i class="fa fa-whatsapp"></i><span>Whatsapp</span></a></li>
+                            <li><a href="javascript:Compartilhar.gerarLinkFacebook();" target="_blank"><i class="fa fa-facebook-square"></i><span>Facebook</span></a></li>
+                            <li><a href="javascript:Compartilhar.gerarLinkTwitter();" target="_blank"><i class="fa fa-twitter-square"></i><span>Twitter</span></a></li>
+                            <li><a href="javascript:Compartilhar.gerarQRCode();" target="_blank"><i class="fa fa-qrcode"></i><span>QR Code</span></a></li>
+                        </ul>
+                        <div id="divQRCode" style="display:none;"></div>
+                    </div>
+
+                    <div class="busca-simples">
+
+                        <label for="busca-simples-link" class="sr-only">Link</label>
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-8">
+                                <input type="text" id="busca-simples-link" name="link" readonly class="input100">
+                            </div>
+                            <div class="col-xs-12 botoes-compartilhar-link">
+                                <button id="btnGerarLink" type="button"  onclick="Compartilhar.encurtarURL(false, true);">Gerar Link</button>
+                                <button id="btnCopiarLink" type="button" onclick="Compartilhar.copiarLink();">Copiar link</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="tab-notificacoes">
+                    <span class="box-compartilhe__titulo">
+                        Gostaria de receber notificações sobre atualizações de dados do Portal da Transparência?
+                        <a href="/notificacoes">Cadastre-se aqui</a>.
+                    </span>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="tab-contato">
+                    <span class="box-compartilhe__titulo">Contato</span>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6">
+                            <ul class="box-compartilhe__lista">
+                                <li>
+                                    <i class="fa fa-info-circle" aria-hidden="true"></i>
+                                    <a href="http://www.acessoainformacao.gov.br/" target="_blank">Faça um pedido de informação para o Governo Federal</a>
+                                </li>
+                                <li>
+                                    <i class="fa fa-bullhorn" aria-hidden="true"></i>
+                                    <a href="https://sistema.ouvidorias.gov.br/publico/Manifestacao/RegistrarManifestacao.aspx?tipo=1" target="_blank">Faça uma denúncia</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-sm-12 col-md-6">
+                            <ul class="box-compartilhe__lista">
+                                <li><i class="fa fa-exclamation-circle" aria-hidden="true"></i>
+                                    <a href="https://sistema.ouvidorias.gov.br" target="_blank">Registre suas sugestões, dúvidas e reclamações</a>
+                                </li>
+                                <li><i class="fa fa-question-circle" aria-hidden="true"></i> <a href="/redetransparencia" target="_blank">Onde encontrar informações sobre estados e municípios</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <form id="formulario-correcao" class="collapse" action="#" method="post" aria-hidden="true">
+                        <fieldset>
+                            <legend>Formulário de correção</legend>
+
+                            <div class="form-group">
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <label for="texto-correcao" class="sr-only">Texto</label>
+                                        <textarea id="texto-correcao" cols="30" rows="10" name="correcao"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label for="sugestoes-email">Seu e-mail</label>
+
+                            <div class="row">
+                                <div class="col-sm-12 col-md-9">
+                                    <input type="text" id="sugestoes-email" name="sugestoes-email">
+                                </div>
+                                <div class="col-sm-12 col-md-3">
+                                    <input type="submit" value="Enviar correção">
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer id="arodape" role="contentinfo">
+    <section class="container">
+        <button id="botao-rodape" type="button" class="btn btn-primary pull-right">Voltar para o topo <i class="fa fa-chevron-circle-up"></i></button>
+
+        <div class="row">
+            <div class="col-12 col-sm-3">
+                <h2>Principal</h2>
+                <ul role="list">
+                    <li role="listitem"><a href="/orgaos">Panorama do Governo Federal</a></li>
+                    <li role="listitem"><a href="/despesas">Despesas Públicas</a></li>
+                    <li role="listitem"><a href="/funcoes">Áreas de atuação do Governo</a></li>
+                    <li role="listitem"><a href="/servidores">Servidores Públicos</a></li>
+                    <li role="listitem"><a href="/redetransparencia">Rede de Transparência</a></li>
+                    <li role="listitem"><a href="/notificacoes">Receba Notificações</a></li>
+                    <li role="listitem"><a href="/download-de-dados">Dados Abertos</a></li>
+                </ul>
+            </div>
+            <div class="col-12 col-sm-3">
+                <h2>Educativo</h2>
+                <ul role="list">
+                    <li role="listitem"><a href="/sobre/o-que-e-e-como-funciona">O que é e como funciona o Portal</a></li>
+                    <li role="listitem"><a href="/sobre/o-que-voce-encontra-no-portal">O que você encontra no Portal</a></li>
+                    <li role="listitem"><a href="/entenda-a-gestao-publica/orcamento-publico">Orçamento Público</a></li>
+                    <li role="listitem"><a href="/usando-o-portal">Usando o Portal</a></li>
+                    <li role="listitem"><a href="/perguntas-frequentes">Perguntas frequentes</a></li>
+                    <li role="listitem"><a href="/glossario">Glossário</a></li>
+                </ul>
+            </div>
+            <div class="col-12 col-sm-3">
+                <h2>Controle social</h2>
+                <ul role="list">
+                    <li role="listitem"><a href="/controle-social/o-portal-como-ferramenta">O Portal como ferramenta</a></li>
+                    <li role="listitem"><a href="http://www.acessoainformacao.gov.br/">Acesso à Informação</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</footer>
+
+<div id="footer-brasil"></div>
+
+<div id="carregando" style="display: none;">
+    Carregando... <i class="fa fa-refresh girar"></i>
+</div>
+
+<!--
+    ARQUIVO ALTERADO CONFORME O AMBIENTE.
+    PARA ADICIONAR NOVOS ARQUIVOS, INCLUIR NO FILTRO E POM.XML
+ -->
+<script type="text/javascript" src="/static/libs/talk/forms.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/talk/masks.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/jquery-qrcode/jquery.qrcode-0.12.0.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/jquery-validation/jquery.validate.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/jquery-validation/jquery.validate.options.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/speakingurl/speakingurl.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/js/cgu.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/jquery-validation/additional-methods.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/bootstrap-datepicker/bootstrap-datepicker.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/bootstrap-datepicker/bootstrap-datepicker.pt-BR.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/bootstrap/js/bootstrap.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/js/interrogacao.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/js/compartilhar.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/cycle2/jquery.cycle2.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/cycle2/jquery.cycle2.carousel.min.js?v=1.5.0"></script>
+<script type="text/javascript" src="/static/libs/timeline/jquery.timelineMe.min.js?v=1.5.0"></script>
+<script type="text/javascript"> var springUrl = "/".split(";")[0]; </script>
+<!--[if lt IE 9]>
+<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9;">
+<![endif]-->
+<script>
+
+    $(function () {
+
+        $(window).load(function () {
+
+
+
+            // FUNÇÃO PARA O COLLAPSE
+            cgu.element.display();
+
+            // FUNÇÃO PARA VALIDAR O FORMULÁRIO
+            forms.form.validate(".form-consulta");
+        });
+
+        cgu.criarDatePickers();
+        cgu.iniciaTipoConteudoEspecifico();
+
+    });
+
+</script>
+
+<!-- Inclusao dos arquivos JavaScript definidos em cada view -->
+    <script type="text/javascript" src="/static/js/despesas/documento/documento.js?v=1.5.0"></script>
+
+    <script type="text/javascript" src="/static/js/baixar.js?v=1.5.0"></script>
+    <script type="text/javascript" src="/static/libs/dataTables/jquery.dataTables.js?v=1.5.0"></script>
+    <script type="text/javascript" src="/static/libs/dataTables/dataTables.bootstrap.js?v=1.5.0"></script>
+    <script type="text/javascript" src="/static/js/datatables.js?v=1.5.0"></script>
+    <script type="text/javascript" src="/static/js/GridAgrupavel.js?v=1.5.0"></script>
+    <script type="text/javascript" src="/static/libs/jquery/jquery.doubleScroll.js?v=1.5.0"></script>
+    <link rel="stylesheet" href="/static/css/print-table.css?v=1.5.0" media="print" />
+
+<script type="text/javascript">
+
+    var Filtros = {
+        adicionarFiltrosAoRequest: function (data) {
+            data.fase = "Empenho";
+            data.codigo = "153079152322014NE808480";
+        }
+    };
+
+    $(function () {
+        var fase = "Empenho";
+
+        function gerarLinkParaEmpenhoImpactado (data, type, row) {
+            if (row.empenhoExisteNoDM) {
+                var url = springUrl + "despesas/empenho/" + row.empenho;
+                return "<a href='" + url + "'>" + data + "</a>";
+            }
+            return row.empenho;
+        }
+
+        if (fase === "Liquidação") {
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/liquidacao/empenhos-impactados"
+                , seletor: "#listaEmpenhosImpactados"
+                , ordem: [[0, "desc"]]
+                , colunas: [
+                    {name: "empenhoResumido", data: "empenhoResumido", title: "Empenho",
+                        render : gerarLinkParaEmpenhoImpactado }
+                    , {name: "valorLiquidado", data: "valorLiquidado", title: "Valor liquidado"}
+                    , {name: "valorRestoInscrito", data: "valorRestoInscrito", title: "Valor inscrito em restos a pagar"}
+                    , {name: "valorRestoCancelado", data: "valorRestoCancelado", title: "Valor de restos a pagar cancelados"}
+                    , {name: "valorRestoPago", data: "valorRestoPago", title: "Valor de restos a pagar pagos"}
+                ]
+            });
+        }
+
+        if (fase === "Pagamento") {
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/pagamento/empenhos-impactados"
+                , seletor: "#listaEmpenhosImpactados"
+                , ordem: [[0, "desc"]]
+                , colunas: [
+                    {name: "empenhoResumido", data: "empenhoResumido", title: "Empenho",
+                        render : gerarLinkParaEmpenhoImpactado }
+                    , {name: "valorPago", data: "valorPago", title: "Pago"}
+                    , {name: "valorRestoInscrito", data: "valorRestoInscrito", title: "Inscrito em restos a pagar"}
+                    , {name: "valorRestoCancelado", data: "valorRestoCancelado", title: "Restos a pagar cancelados"}
+                    , {name: "valorRestoPago", data: "valorRestoPago", title: "Restos a pagar pagos"}
+                ]
+            });
+
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/pagamento/favorecido"
+                , seletor: "#listaFavorecidos"
+                , ordem: [[2, "desc"]]
+                , colunas: [
+                    {name: "favorecido", data: "favorecido", title:"Favorecido", orderable: true},
+                    {name: "codigoFavorecido", data: "codigoFavorecido", title:"Código", orderable: false},
+                    {name: "valor", data: "valor", title:"Valor", orderable: true}
+                            ]
+            });
+
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/pagamento/listaBancos"
+                , seletor: "#listaBancos"
+                , ordem: [[2, "desc"]]
+                , colunas: [
+                    {name: "codigoLista",               data: "codigoLista",        title: "Código da Lista"},
+                    {name: "skBanco",                   data: "skBanco",            title: "Código do Banco"},
+                    {name: "nomeBanco",                 data: "nomeBanco",          title: "Nome do Banco", orderable: true},
+                    {name: "numeroAgencia",             data: "numeroAgencia",      title: "Número da Agência"},
+                    {name: "valorLancamento",           data: "valorLancamento",    title: "Valor do Lançamento", orderable: true}
+                ]
+            });
+
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/pagamento/listaFaturas"
+                , seletor: "#listaFaturas"
+                , ordem: [[1, "desc"]]
+                , colunas: [
+                    {name: "codigoLista",               data: "codigoLista",                title: "Código da Lista"},
+                    {name: "codigoSequencia",           data: "codigoSequencia",            title: "Sequência"},
+                    {name: "codFavorecidoFormatado",    data: "codFavorecidoFormatado",     title: "Código do Favorecido", orderable: false},
+                    {name: "nomFavorecido",             data: "nomFavorecido",              title: "Favorecido"},
+                    {name: "valorLancamento",           data: "valorLancamento",            title: "Valor Lançamento"},
+                    {name: "valorDesconto",             data: "valorDesconto",              title: "Valor Desconto"},
+                    {name: "valorJuros",                data: "valorJuros",                 title: "Valor Juros"},
+                    {name: "valorDeducao",              data: "valorDeducao",               title: "Valor Deducao"},
+                    {name: "valorAcrescimo",            data: "valorAcrescimo",             title: "Valor Acréscimo"}
+                ]
+            });
+
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/pagamento/listaPrecatorios"
+                , seletor: "#listaPrecatorios"
+                , ordem: [[2, "desc"]]
+                , colunas: [
+                    {name: "codigoLista",               data: "codigoLista",        title: "Código da Lista"},
+                    {name: "numeroParcela",             data: "numeroParcela",      title: "Número da Parcela"},
+                    {name: "valorPrecatorio",           data: "valorPrecatorio",    title: "Valor Pracatório"}
+                ]
+            });
+
+        }
+
+        if (fase === "Empenho") {
+            new GridAgrupavel({
+                urlBase: springUrl + "despesas/documento/empenho/detalhamento"
+                , seletor: "#listaDetalhamentoDoGasto"
+                , ordem: [[2, "desc"]]
+                , colunas: [
+                    {name: "subitem", data: "subitem", title: "Subitem"},
+                    {name: "quantidade", data: "quantidade", title: "Quantidade"},
+                    {name: "valorUnitario", data: "valorUnitario", title: "Valor Unitário"},
+                    {name: "valorTotal", data: "valorTotal", title: "Valor Total"},
+                    {name: "descricao", data: "descricao", title: "Descrição"}
+                ]
+            });
+        }
+
+        new GridAgrupavel({
+            urlBase: springUrl + "despesas/documento/documentos-relacionados"
+            , seletor: "#listaDocumentosRelacionados"
+            , ordem: [[1, "desc"]]
+            , colunas: [
+                {name: "data", data: "data", title: "Data"},
+                {name: "fase", data: "fase", title: "Fase"},
+                {name: "documentoResumido", data: "documentoResumido", title: "Documento Resumido",
+                    render : function (data, type, row) {
+                        if(row.flgExisteDocumentoRelacionadoNoDM){
+                            var fase = row.fase.toLowerCase().replace("ç", "c").replace("ã", "a");
+                            var url = springUrl + "despesas/" + fase + "/" + row.documento;
+                            return "<a href='" + url + "'>" + data + "</a>";
+                        }else {
+                            return row.documento;
+                        }
+                    } },
+                {name: "especie", data: "especie", title: "Espécie"}
+            ]
+        });
+
+        var options = {
+            fase : "Empenho"
+            , codigo : "153079152322014NE808480"
+        };
+        var documento = new Documento();
+        documento.init(options);
+
+    });
+
+</script>
+
+
+
+
+
+<!-- BARRA DO TOPO DO GOVERNO -->
+
+<!--[if (gt IE 8)|(!IE)]> -->
+<!-- <![endif]-->
+
+</body>
+</html>

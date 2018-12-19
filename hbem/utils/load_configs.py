@@ -14,9 +14,9 @@ if MODE == 'PROD':
     system_dao = SystemConfigDao(os.environ.get('MONGODB_ADDON_URI'))
     proxy_dao = ProxiesDao(os.environ.get('MONGODB_ADDON_URI'))
 else:
-    docs_dao = DocumentsDao(host='172.17.0.1')
-    system_dao = SystemConfigDao(host='172.17.0.1')
-    proxy_dao = ProxiesDao(host='172.17.0.1')
+    docs_dao = DocumentsDao()
+    system_dao = SystemConfigDao()
+    proxy_dao = ProxiesDao()
 
 BASE_DIR = os.path.dirname(os.path.realpath(__file__))
 

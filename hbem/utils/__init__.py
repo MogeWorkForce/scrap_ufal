@@ -2,14 +2,19 @@
 from __future__ import absolute_import, unicode_literals
 
 import logging
+import re
 from unicodedata import normalize
+
+match_span = re.compile(r'<span class="aviso_lista">.*?</span>?')
+REMOVE_TRASH_REGEX = re.compile(r"[_/]{1,}")
+REMOVE_SPACES_REGEX = re.compile(r"\s{1,}")
 
 formatter = logging.Formatter(
     "[%(name)s][%(levelname)s][PID %(process)d][%(asctime)s] %(message)s",
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger("HBEM")
-level_debug = logging.DEBUG
+level_debug = logging.INFO
 logger.setLevel(level_debug)
 file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
@@ -19,19 +24,28 @@ NOT_ALLOWED_CLEAN = ('documentos_relacionados',)
 
 
 def clean_result(result):
-    return result.text.replace('\n', '').replace(
-        '  ', '').replace('&nbsp;', ' ').replace('&nbsp', ' ')
+    txt = result.text.replace("\t", " ").\
+        replace('\n', '').\
+        replace('&nbsp;', ' ')
+    txt = match_span.sub('', txt)
+    return txt
 
 
 def normalize_text(txt, codif='utf-8'):
-    if isinstance(txt, str):
-        txt = txt.decode(codif, "ignore")
-    return normalize('NFKD', txt).encode('ASCII', 'ignore'). \
-        replace(" ", "_"). \
-        replace(':', ''). \
-        replace("(", ""). \
-        replace(")", ""). \
-        replace("$", "s").lower()
+    txt = REMOVE_TRASH_REGEX.sub(
+        "_", normalize('NFKD', txt).
+            replace(" ", "_").
+            replace("-", "_").
+            replace(':', '').
+            replace("(", "").
+            replace(")", "").
+            replace("$", "s").
+            replace("/", "_/_").
+            replace('_/_', '_').
+            encode("ascii", "ignore").
+            decode('utf-8').
+            lower())
+    return txt
 
 
 def remove_list(doc):
