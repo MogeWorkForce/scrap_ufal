@@ -59,5 +59,6 @@ def feed_urls():
     for pr in params:
         url_dao.add_period_to_recover_in_portal(start_date, month, pr)
 
+
 if __name__ == '__main__':
     feed_urls()

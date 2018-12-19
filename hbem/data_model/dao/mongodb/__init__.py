@@ -16,7 +16,7 @@ from ....utils import remove_list, logger, level_debug
 MODE = os.environ.get('MODE', 'DEV')
 
 logger_dao = logging.getLogger('HBEM.DocumentsDao')
-logger_dao.setLevel(logging.DEBUG)
+logger_dao.setLevel(logging.INFO)
 
 uri_url = 'MONGO_URI: ' + os.environ.get('MONGODB_ADDON_DB', '')
 mongo_db = 'MONGO_DB: ' + os.environ.get('MONGODB_ADDON_URI', '')
@@ -101,24 +101,7 @@ class UrlManagerDao(MongoClient):
             }
         }
 
-        skip = False
-        try:
-            tmp = copy.deepcopy(key)
-            tmp.update({"urls": list_url})
-            self.db_urls[collection].insert_one(tmp)
-            skip = True
-        except DuplicateKeyError as e:
-            logger_dao.debug(
-                "Expected error - move on addToSet - %s - DuplicateKey",
-                collection.capitalize())
-
-        if not skip:
-            try:
-                self.db_urls[collection].update_one(key, data)
-            except DuplicateKeyError as e:
-                logger_dao.error(e)
-                logger_dao.debug(
-                    "move on - DuplicateKey - %s", collection.capitalize())
+        self.db_urls[collection].update_one(key, data, upsert=True)
 
     def dynamic_url(self, collection, url):
         date_ = date.today()
@@ -128,24 +111,8 @@ class UrlManagerDao(MongoClient):
                 "urls": url
             }
         }
-        skip = False
-        try:
-            tmp = copy.deepcopy(key)
-            tmp.update({"urls": [url]})
-            self.db_urls[collection].insert_one(tmp)
-            skip = True
-        except DuplicateKeyError as e:
-            logger_dao.debug(
-                "Expected error - move on - %s - DuplicateKey",
-                collection.capitalize())
 
-        if not skip:
-            try:
-                self.db_urls[collection].update_one(key, data)
-            except DuplicateKeyError as e:
-                logger_dao.error(e)
-                logger_dao.debug(
-                    "move on -  %s - DuplicateKey", collection.capitalize())
+        self.db_urls[collection].update_one(key, data, upsert=True)
 
     def remove_urls(self, list_urls, collection='queue'):
         date_ = date.today()
@@ -241,7 +208,7 @@ class ProxiesDao(MongoClient):
 
     def get_unused_proxy(self):
         random_skip = random.randint(0, 20)
-        now = datetime.utcnow() - timedelta(minutes=10, seconds=30)
+        now = datetime.utcnow() - timedelta(minutes=1, seconds=30)
         list_proxy = self.proxies.find({
             'in_use': False,
             "last_date_in_use": {

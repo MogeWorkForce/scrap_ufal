@@ -16,7 +16,7 @@ from ..data_model.dao.mongodb import DocumentsDao, ProxiesDao
 from ..utils import clean_result, normalize_text, REMOVE_SPACES_REGEX
 
 logger = logging.getLogger("HBEM.scraper")
-level_debug = logging.DEBUG
+level_debug = logging.WARNING
 logger.setLevel(level_debug)
 
 base_data = re.compile(r'(?P<host>http?://.*?)/(?P<session>[^/]*)/'
@@ -82,7 +82,6 @@ def get_general_data(url, data=None):
         data['geral_data'] = {}
 
     for dt in base_data.finditer(url):
-        print(dt.groups())
         data['geral_data']['url_base'] = dt.group("host")
         data['geral_data']['type_doc'] = dt.group("type_doc")
         data['geral_data']['num_doc'] = dt.group("num_doc")
@@ -94,7 +93,7 @@ def get_general_data(url, data=None):
 
 # TODO: pessimo nome, mudar isso depois
 def cleaned_content(url, visited_links, proxy):
-    time.sleep(4.1)
+    time.sleep(2)
     logger.debug((len(visited_links), url))
     logger.debug(proxy)
     result = requests.get(url, timeout=10, proxies=proxy)
@@ -118,7 +117,7 @@ def get_content_page(url, visited_links=None, data=None):
         result = cleaned_content(url, visited_links, proxy)
 
         no_spaces = result
-        data = load_content(no_spaces, paginator, data, visited_links)
+        data = load_content(no_spaces, data, proxy)
         proxy_dao.mark_unused_proxy(_id)
     except Exception:
         proxy_dao.mark_unused_proxy(_id, error=True)
@@ -127,7 +126,7 @@ def get_content_page(url, visited_links=None, data=None):
     return data
 
 
-def get_related_documents(data):
+def get_related_documents(data, proxy):
     querystring = {
         "paginacaoSimples": "true",
         "tamanhoPagina": "100",
@@ -142,21 +141,17 @@ def get_related_documents(data):
 
     headers = {'content-type': 'application/x-www-form-urlencoded'}
     url = data["geral_data"]["url_base"] + URL_RELATED_DOCUMENTS
-    logger.info(url)
-    _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("related_docs", response.url))
-        proxy_dao.mark_unused_proxy(_id)
+        
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.error(("related_docs", response.url), exc_info=True)
         raise
 
-    return response.json()["data"]
 
-
-def get_expenses_detail(data):
+def get_expenses_detail(data, proxy):
     querystring = {
         "paginacaoSimples": "true",
         "tamanhoPagina": "100",
@@ -173,21 +168,17 @@ def get_expenses_detail(data):
         data["geral_data"]["type_doc"]
     )
     logger.info(url)
-    _id, proxy = get_any_proxy()
+    response = None
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("expenses_details", response.url))
-        tmp_data = response.json()["data"]
-        proxy_dao.mark_unused_proxy(_id)
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.info(("expenses_details", response.url), exc_info=True)
         return []
 
-    return tmp_data
 
-
-def get_impacted_empenhos(data):
+def get_impacted_empenhos(data, proxy):
     querystring = {
         "paginacaoSimples": "true",
         "tamanhoPagina": "100",
@@ -205,20 +196,17 @@ def get_impacted_empenhos(data):
         data["geral_data"]["type_doc"]
     )
     logger.info(url)
-    _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("impacted_empenhos", response.url))
-        proxy_dao.mark_unused_proxy(_id)
+
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.error(("impacted_empenhos", response.url), exc_info=True)
         raise
 
-    return response.json()["data"]
 
-
-def get_destination_banks(data):
+def get_destination_banks(data, proxy):
     querystring = {
         "paginacaoSimples": "true",
         "tamanhoPagina": "15",
@@ -236,20 +224,16 @@ def get_destination_banks(data):
     url = data["geral_data"]["url_base"] + URL_DESTINATION_BANKS.format(
         data["geral_data"]["type_doc"]
     )
-    _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("get_destination_banks", response.url))
-        proxy_dao.mark_unused_proxy(_id)
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.error(("get_destination_banks", response.url), exc_info=True)
         raise
 
-    return response.json()["data"]
 
-
-def get_paied_invoices(data):
+def get_paid_invoices(data, proxy):
     querystring = {
         "paginacaoSimples": "true",
         "tamanhoPagina": "100",
@@ -270,20 +254,16 @@ def get_paied_invoices(data):
         data["geral_data"]["type_doc"]
     )
     logger.info(url)
-    _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("get_paied_invoices", response.url))
-        proxy_dao.mark_unused_proxy(_id)
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.error(("get_paid_invoices", response.url), exc_info=True)
         raise
 
-    return response.json()["data"]
 
-
-def get_paied_precatorios(data):
+def get_paid_precatorios(data, proxy):
 
     querystring = {
         "paginacaoSimples": "true",
@@ -302,23 +282,19 @@ def get_paied_precatorios(data):
         data["geral_data"]["type_doc"]
     )
     logger.info(url)
-    _id, proxy = get_any_proxy()
     try:
         response = requests.get(
             url, headers=headers, params=querystring, proxies=proxy)
-        logger.info(("get_paied_precatorios", response.url))
-        proxy_dao.mark_unused_proxy(_id)
+        return response.json()["data"]
     except Exception:
-        proxy_dao.mark_unused_proxy(_id, error=True)
+        logger.error(("get_paid_precatorios", response.url), exc_info=True)
         raise
 
-    return response.json()["data"]
 
-
-def load_content(content_original, paginator=False, data=None,
-                 visited_links=None):
-    if not visited_links:
-        visited_links = []
+def load_content(content_original, data=None, proxy=None):
+    _id = None
+    if not proxy:
+        _id, proxy = get_any_proxy()
 
     if not data:
         data = {}
@@ -356,22 +332,28 @@ def load_content(content_original, paginator=False, data=None,
             except:
                 print("Falha na key", key)
 
-    data["documentos_relacionados"] = get_related_documents(data)
-    data["detalhamento_do_gasto"] = get_expenses_detail(data)
+    try:
 
-    if data["geral_data"]["type_doc"] in ["pagamento", "liquidacao"]:
-        data["empenhos_impactados"] = get_impacted_empenhos(data)
+        data["documentos_relacionados"] = get_related_documents(data, proxy)
+        data["detalhamento_do_gasto"] = get_expenses_detail(data, proxy)
 
-    if data["geral_data"]["type_doc"] == "pagamento":
-        data["bancos_destinatarios"] = get_destination_banks(data)
-        data["faturas_pagas"] = get_paied_invoices(data)
-        data["precatorios_pagos"] = get_paied_precatorios(data)
+        if data["geral_data"]["type_doc"] in ["pagamento", "liquidacao"]:
+            data["empenhos_impactados"] = get_impacted_empenhos(data, proxy)
+
+        if data["geral_data"]["type_doc"] == "pagamento":
+            data["bancos_destinatarios"] = get_destination_banks(data, proxy)
+            data["faturas_pagas"] = get_paid_invoices(data, proxy)
+            data["precatorios_pagos"] = get_paid_precatorios(data, proxy)
+    except:
+        if _id:
+            proxy_dao.mark_unused_proxy(_id)
+        raise
 
     related_docs_links = [
         "{}/{}/{}/{}?ordenarPor=fase&direcao=desc".format(
             data["geral_data"]["url_base"],
             data["geral_data"]["session"],
-            doc["fase"].lower(),
+            normalize_text(doc["fase"]).lower(),
             doc["documento"],
         ) for doc in data["documentos_relacionados"]
     ]
@@ -411,31 +393,27 @@ def load_url_from_queue(batch=1, collection='queue'):
 
         for url in tmp_urls_load:
             try:
-                in_ = client.url.verify_today_urls(url)
-
-                if not in_:
-                    logger.debug('Start load url_from %s! %s',
-                                 collection.upper(), url)
-                    get_content_page(url)
-                    client.url.dynamic_url('queue_loaded', url)
-                else:
+                if client.url.verify_today_urls(url):
                     logger.warn("Url already loaded: %s", url)
+                    continue
+                logger.debug('Start load url_from %s! %s',
+                             collection.upper(), url)
+                get_content_page(url)
+                client.url.dynamic_url('queue_loaded', url)
+
             except:
-                traceback.print_exc()
                 client.url.dynamic_url('fallback', url)
-                logger.warn("Call Fallback to Url: %s", url)
+                logger.error("Call Fallback to Url: %s", url, exc_info=True)
 
         try:
             client.url.remove_urls(tmp_urls_load, collection=collection)
             logger.debug('(%s)Pass to remove_urls! Batches: %d',
                          collection.upper(), batch)
-        except Exception as e:
-            traceback.print_exc()
-            logger.warn("Error on remove urls")
+        except Exception:
+            logger.error("Error on remove urls", exc_info=True)
 
     except:
-        traceback.print_exc()
-        logger.debug('Errors on %s!', collection.upper())
+        logger.error('Errors on %s!', collection.upper(), exc_info=True)
         return
 
 

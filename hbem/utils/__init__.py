@@ -14,7 +14,7 @@ formatter = logging.Formatter(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger("HBEM")
-level_debug = logging.DEBUG
+level_debug = logging.INFO
 logger.setLevel(level_debug)
 file_handler = logging.StreamHandler()
 file_handler.setFormatter(formatter)
